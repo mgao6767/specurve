@@ -4,7 +4,8 @@
 {viewerdialog specurve "dialog specurve"}{...}
 {viewerjumpto "Syntax" "specurve##syntax"}{...}
 {viewerjumpto "Description" "specurve##description"}{...}
-{viewerjumpto "Options" "specurve##options"}{...}
+{viewerjumpto "Dependencies" "specurve##dependencis"}{...}
+{viewerjumpto "Configuration file" "specurve##configuration"}{...}
 {viewerjumpto "Examples" "specurve##examples"}{...}
 {marker syntax}{...}
 
@@ -30,6 +31,57 @@
 {pstd}The required Python version is 3.8 and above.
 
 {pstd}The Python module used for plotting is {bf:plotly}, which uses {bf:kaleido} as the static image export engine.
+
+{pstd}Other required Python modules include {bf:pyyaml} for reading and parsing the configuration file, and {bf:pandas} for basic dataset manimuplation.
+
+
+{marker Configuration}{...}
+
+{title:Configuration file}
+
+{p}
+The configuration file is a YAML-formatted text file that describes all the model specifications. Its basic format is:
+
+    Choices:
+        Group:
+            - Label: Variables
+    Conditions:
+        Group:
+            - Label: Variables
+
+Some reserved keywords (in bold font below) must present in the configuration file.
+
+    {bf:Choices:}
+        {bf:Dependent Variable:}
+            - Label of the dependent variable: {var}
+        {bf:Focal Variable:}
+            - Label of the key independent variable of interest: {var}
+        {bf:Control Variables:}
+            - Label of a set of control variables, such as "baseline": {varlist}
+            - Label of another set of control variables: {varlist}
+
+For example:
+
+    Choices:
+        Dependent Variable:
+            - Depvar1 label: depvar1
+            - Depvar2 label: depvar2
+        Focal Variable:
+            - Key measure of something: focal_var1
+        Control Variables:
+            - Baseline: ctrl1 ctrl2 ctrl3 ctrl4
+            - Baseline and Ctrl5: ctrl1 ctrl2 ctrl3 ctrl4 ctrl5
+        Fixed Effects:
+            - Firm and Year: gvkey fyear
+            - Industry and Year: sic2 fyear
+        Standard Error Clustering:
+            - By Firm: gvkey
+            - By Industry: sic2
+
+    Conditions:
+        Sample Period:
+            - Full Sample: 1993 <= fyear & fyear <= 2020
+            - Excluding GFC: (1993 <= fyear & fyear <= 2006) | fyear >= 2009
 
 
 {hline}

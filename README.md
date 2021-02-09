@@ -13,6 +13,12 @@ Python modules required:
 * [`plotly`](https://plotly.com/python/): for generating the specification curve plot.
 * [`kaleido`](https://github.com/plotly/Kaleido): for static image export with `plotly`.
 
+To install the required modules, try:
+
+```
+pip install pandas pyyaml plotly kaleido
+```
+
 ## Installation
 
 Download `specurve.ado` and `specurve.hlp` and put them in your personal ado folder. To find the path to your personal ado folder, type `adopath` in Stata.
