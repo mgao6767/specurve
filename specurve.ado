@@ -78,7 +78,7 @@ def read_configuration(config_file: str):
         SFIToolkit.exit(601)
 
     choices: Dict[Group, List[Dict[Label, Variables]]] = cfg.get("Choices")
-    conditions: Dict[Group, List[Dict[Label, Variables]]] = cfg.get("Conditions")
+    conditions: Dict[Group, List[Dict[Label, Variables]]] = cfg.get("Conditions", {})
 
     # Check the presence of choices in configuration
     if not choices:
@@ -135,7 +135,7 @@ def read_configuration(config_file: str):
 def gen_models_from(config_file: str):
 
     focal_vars, choices, conditions, alternatives = read_configuration(config_file)
-    labels_of_ = lambda x: [k for cs in x.values() for c in cs for k in c]
+    labels_of_ = lambda x: [k for cs in x.values() for c in cs for k in c] if x else []
     labels_of_choices: List[Label] = labels_of_(choices)
     labels_of_conditions: List[Label] = labels_of_(conditions)
     # Compose the Stata command to estimate the models
