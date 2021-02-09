@@ -12,6 +12,6 @@ The associated help file contains a step-by-step guide on using `specurve`. To o
 
 ## Example output:
 
-![example1](https://github.com/mgao6767/specurve/images/example1.png)
+![example1](https://github.com/mgao6767/specurve/raw/main/images/example1.png)
 
-![example2](https://github.com/mgao6767/specurve/images/example2.png)
+![example2](https://github.com/mgao6767/specurve/raw/main/images/example2.png)
