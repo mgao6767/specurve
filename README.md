@@ -4,7 +4,14 @@
 
 ## Dependencies
 
-`specurve` depends on Stata 16's Python integration and requires a Python version of 3.8 or above. The plotting function is achieved via the [`plotly`](https://plotly.com/python/) module. Note that the static image export is powered by [`kaleido`](https://github.com/plotly/Kaleido).
+`specurve` depends on Stata 16's Python integration and requires a Python version of 3.8 or above.
+
+Python modules required:
+
+* [`pandas`](https://pandas.pydata.org/): for basic dataset manipulation.
+* [`pyyaml`](https://pyyaml.org/): for reading and parsing the YAML-formatted configuration file.
+* [`plotly`](https://plotly.com/python/): for generating the specification curve plot.
+* [`kaleido`](https://github.com/plotly/Kaleido): for static image export with `plotly`.
 
 ## Installation
 
