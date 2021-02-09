@@ -1,0 +1,80 @@
+{smcl}
+{* *! version 16.0 8jan2021}{...}
+{title:Specurve - Specification Curve Analysis}{smcl}
+{viewerdialog specurve "dialog specurve"}{...}
+{viewerjumpto "Syntax" "specurve##syntax"}{...}
+{viewerjumpto "Description" "specurve##description"}{...}
+{viewerjumpto "Options" "specurve##options"}{...}
+{viewerjumpto "Examples" "specurve##examples"}{...}
+{marker syntax}{...}
+
+
+{title:Syntax}
+
+{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(integer)} {opt h:eight(integer)} {opt fonts:cale(real)} {opt annotationshift(integer)}]
+  
+
+{marker description}{...}
+
+{title:Description}
+
+{cmd:specurve} performs regressions as specified by the YAML-formatted {it:filename} and plot the specification curve.
+
+
+{marker Dependencies}{...}
+
+{title:Dependencies}
+
+{cmd:specurve} depends on {help reghdfe} and uses Stata 16's {help Python} integration to draw the specification curve plot.
+
+{pstd}The required Python version is 3.8 and above.
+
+{pstd}The Python module used for plotting is {bf:plotly}, which uses {bf:kaleido} as the static image export engine.
+
+
+{hline}
+{marker examples}{...}
+
+{title:Examples}
+
+
+{pstd}Use the National Longitudinal Survey (Young Women 14-26 years of age in 1968) as an example.
+
+{phang2}{stata "use http://www.stata-press.com/data/r13/nlswork.dta, clear":use http://www.stata-press.com/data/r13/nlswork.dta, clear}
+
+{pstd}Download an example YAML-formatted configuration file:
+
+{phang2}{stata "copy https://mingze-gao.com/specurve/example_config_nlswork_1.yml ., replace"}
+
+{pstd}Run {cmd:specurve} using the downloaded configuration file and make a specification curve plot with default options.
+
+{phang2}{stata specurve using example_config_nlswork_1.yml}
+ 
+{pstd}Next, let's try two dependent variables. For illustration, we create a {bf:wage} variable by exponentiating {bf:ln_wage}:
+
+{phang2}{stata gen wage = exp(ln_wage)}
+
+{pstd}Then download and use the second example configuration file:
+
+{phang2}{stata "copy https://mingze-gao.com/specurve/example_config_nlswork_2.yml ., replace"}
+
+{phang2}{stata specurve using example_config_nlswork_2.yml, width(1200) annotationshift(30)}
+
+{pstd}Note here, we changed the width of the plot and modified the (left) spacing between the annotation and plot margin.
+
+{pstd}To remove the downloaded example configuration files and generated plots, run the following commands:
+
+{phang2}{stata rm example_config_nlswork_1.yml}
+
+{phang2}{stata rm example_config_nlswork_2.yml}
+
+{phang2}{stata rm output.png}
+
+
+{hline}
+{marker author}{...}
+
+{title:Author}
+
+{cmd:specurve} is developed by {browse "https://mingze-gao.com":Mingze Gao}.
+
