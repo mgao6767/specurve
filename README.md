@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-`specurve` depends on Stata 16's Python integration and requires a Python version of 3.8 or above.
+`specurve` depends on Stata 16's Python integration and requires a Python version of 3.6 or above.
 
 Python modules required:
 
