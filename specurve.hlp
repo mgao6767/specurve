@@ -5,6 +5,7 @@
 {viewerjumpto "Syntax" "specurve##syntax"}{...}
 {viewerjumpto "Description" "specurve##description"}{...}
 {viewerjumpto "Dependencies" "specurve##dependencis"}{...}
+{viewerjumpto "Options" "specurve##options"}{...}
 {viewerjumpto "Configuration file" "specurve##configuration"}{...}
 {viewerjumpto "Examples" "specurve##examples"}{...}
 {marker syntax}{...}
@@ -12,7 +13,7 @@
 
 {title:Syntax}
 
-{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(integer)} {opt h:eight(integer)} {opt fonts:cale(real)} {opt annotationshift(integer)}]
+{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(integer)} {opt h:eight(integer)} {opt fonts:cale(real)} {opt annotationshift(integer)} {opt theme(string)} {opt transparent_background}]
   
 
 {marker description}{...}
@@ -28,11 +29,22 @@
 
 {cmd:specurve} depends on {help reghdfe} and uses Stata 16's {help Python} integration to draw the specification curve plot.
 
-{pstd}The required Python version is 3.6 and above.
+{pstd}The required Python version is 3.8 and above.
 
 {pstd}The Python module used for plotting is {bf:plotly}, which uses {bf:kaleido} as the static image export engine.
 
 {pstd}Other required Python modules include {bf:pyyaml} for reading and parsing the configuration file, and {bf:pandas} for basic dataset manimuplation.
+
+
+{marker Options}{...}
+
+{title:Options}
+
+{bf:theme} can be one of the following: plotly, plotly_white, plotly_dark, ggplot2, seaborn, simple_white. The plotly theme is the default option.
+{pstd}e.g. specurve using example_config_nlswork_1.yml, theme(simple_white)
+
+{bf:transparent_background} sets the background to be transparent.
+{pstd}e.g. specurve using example_config_nlswork_1.yml, theme(simple_white) transparent_background
 
 
 {marker Configuration}{...}

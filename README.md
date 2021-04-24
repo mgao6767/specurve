@@ -32,3 +32,19 @@ The associated help file contains a step-by-step guide on using `specurve`. To o
 ![example1](https://github.com/mgao6767/specurve/raw/main/images/example1.png)
 
 ![example2](https://github.com/mgao6767/specurve/raw/main/images/example2.png)
+
+## Alternative themes
+
+**Simple White**
+![simple_white](https://github.com/mgao6767/specurve/raw/main/images/theme-simple-white.png)
+
+**Dark**
+![simple_white](https://github.com/mgao6767/specurve/raw/main/images/theme-dark.png)
+
+Check the Stata help file for more theme options and making transparent background.
+
+## Reference
+
+Please consider citing the following paper for which this Stata command is developed.
+
+> Gao, M., Leung, H., & Qiu, B. (2021). Organization capital and executive performance incentives. *Journal of Banking & Finance*, 123, 106017.

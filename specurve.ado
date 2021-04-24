@@ -170,8 +170,12 @@ def gen_models_from(config_file: str):
         )
         model_specs.update({f"model{i+1}": model.specification})
 
-def gen_specurve_plot(results_file: str, output_file: str, width: int, height: int, fontscale: float, annotation_shift: int):
+def gen_specurve_plot(results_file: str, output_file: str, width: int, height: int, fontscale: float, annotation_shift: int, theme: str, transparent_bg: int):
     SFIToolkit.displayln("Generating specification curve plots.")
+    if theme and theme not in ["plotly", "plotly_white", "plotly_dark", "ggplot2", "seaborn", "simple_white", "none"]:
+        SFIToolkit.errprintln("Theme not available.")
+        SFIToolkit.exit(198)
+    transparent_bg = True if transparent_bg == 1 else False
     SFIToolkit.errprintlnDebug(f"{results_file=}")
     frame = Frame.connect(results_file)
     data = frame.getAsDict()
@@ -223,7 +227,10 @@ def gen_specurve_plot(results_file: str, output_file: str, width: int, height: i
             title=dict(text=f"Specification Curve Analysis of {focal_var_label}", 
                 x=0.5,
                 font=dict(size=22),
-                xanchor="center", yanchor="top")
+                xanchor="center", yanchor="top"),
+            paper_bgcolor=None if not transparent_bg else "rgba(0,0,0,0)",
+            plot_bgcolor=None if not transparent_bg else "rgba(0,0,0,0)",
+            template=theme
         ),
     )
 
@@ -471,7 +478,14 @@ end
 capture drop program specurve
 program specurve
     /* args config width height */
-    syntax using/ [, Width(integer 900) Height(integer 1100) FONTScale(real 1.2) annotationshift(integer 50)]
+    syntax using/ [, Width(integer 900) Height(integer 1100) FONTScale(real 1.2) annotationshift(integer 50) theme(string) transparent_background]
+    if (mi("`theme'")) local theme "plotly"
+    if (mi("`transparent_background'")) {
+        local transparent_background 0
+    }
+    else {
+        local transparent_background 1
+    }
     tempname res
     mkf `res' str32(model variable) double(beta lb ub) int(obs)
     
@@ -491,7 +505,7 @@ program specurve
     }	
     
     local output = "output.png"
-    python: gen_specurve_plot("`res'", "`output'", `width', `height', `fontscale', `annotationshift')
+    python: gen_specurve_plot("`res'", "`output'", `width', `height', `fontscale', `annotationshift', "`theme'", `transparent_background')
     
     frame drop `res'
     
