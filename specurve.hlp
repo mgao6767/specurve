@@ -29,7 +29,7 @@
 
 {cmd:specurve} depends on {help reghdfe} and uses Stata 16's {help Python} integration to draw the specification curve plot.
 
-{pstd}The required Python version is 3.8 and above.
+{pstd}The required Python version is 3.6 and above.
 
 {pstd}The Python module used for plotting is {bf:plotly}, which uses {bf:kaleido} as the static image export engine.
 
