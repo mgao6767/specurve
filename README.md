@@ -2,6 +2,11 @@
  
 `specurve` is a Stata command used to perform Specification Curve Analysis and generate the Specification Curve plot.
 
+## Reference
+
+Please consider citing the following paper for which this Stata command is developed.
+
+> Gao, M., Leung, H., & Qiu, B. (2021). Organization capital and executive performance incentives. *Journal of Banking & Finance*, 123, 106017.
 ## Dependencies
 
 `specurve` depends on Stata 16's Python integration and requires a Python version of 3.6 or above.
@@ -43,8 +48,8 @@ The associated help file contains a step-by-step guide on using `specurve`. To o
 
 Check the Stata help file for more theme options and making transparent background.
 
-## Reference
+## Troubleshooting
 
-Please consider citing the following paper for which this Stata command is developed.
+* **When following the help file, Stata reports error "file example_config_nlswork_1.yml could not be opened".**
 
-> Gao, M., Leung, H., & Qiu, B. (2021). Organization capital and executive performance incentives. *Journal of Banking & Finance*, 123, 106017.
+This is mostly due to permission error. Stata does not have write permission to the current working directory so it cannot download the example configuration file. You can solve it by changing the working directory to somewhere else.

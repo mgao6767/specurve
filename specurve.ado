@@ -176,7 +176,7 @@ def gen_specurve_plot(results_file: str, output_file: str, width: int, height: i
         SFIToolkit.errprintln("Theme not available.")
         SFIToolkit.exit(198)
     transparent_bg = True if transparent_bg == 1 else False
-    SFIToolkit.errprintlnDebug(f"{results_file=}")
+    SFIToolkit.errprintlnDebug(f"Results file={results_file}")
     frame = Frame.connect(results_file)
     data = frame.getAsDict()
     results = pd.DataFrame.from_dict(data).set_index("model")
@@ -184,7 +184,7 @@ def gen_specurve_plot(results_file: str, output_file: str, width: int, height: i
     data = annotation.join(results)
 
     depvars = list(set(data["Dependent Variable"]))
-    SFIToolkit.displayln(f"{depvars=}")
+    SFIToolkit.displayln(f"Dependent variable={depvars}")
     n_depvars = len(depvars)
     key_vars = set(results["variable"])
 
