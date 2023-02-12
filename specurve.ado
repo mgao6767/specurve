@@ -1,513 +1,467 @@
-version 16.1
+set matastrict on
 
-python:
-from sfi import SFIToolkit, Macro, Scalar, Frame
-import yaml
-import itertools
-import pandas as pd
-from typing import Dict, List, NewType
-from dataclasses import dataclass, field
-try:
-    import plotly.graph_objects as go
-    SFIToolkit.displayln("Python modules loaded successfully.")
-except ImportError:
-    SFIToolkit.errprintln("Python module 'plotly' not found.")
-    SFIToolkit.errprintln("You should try to install plotly via pip. Check https://pypi.org/project/plotly/ for installation guide.")
-    SFIToolkit.exit(198)
+capture program drop specurve
 
+program specurve
+  syntax using/ [, OUTput DESCending Benchmark(real 0)]
 
-Group = NewType("Name of the group", str)
-Label = NewType("Label of the case in the group", str)
-Variables = NewType("Variables or condition of a case in the group", str)
+  local nooutput = "`output'" != "output"
+  local descending = "`descending'" == "descending"
 
+  mata: main("`using'", `nooutput')
 
-required_keywords = {
-    "Dependent Variable",
-    "Focal Variable",
-    "Control Variables",
-}
+  frame specurve_res {
+    if (`descending') gsort -beta
+    else gsort beta
+    gen rank = _n
+    gen sig95 = (`benchmark' < lb95)  | (`benchmark' > ub95)
+    gen sig99 = (`benchmark' < lb99)  | (`benchmark' > ub99)
+    qui: count
+    local nspecs = r(N)
+    qui: count if sig99==1
+    local nsig99 = r(N)
+    qui: count if sig95==1
+    local nsig95 = r(N)
+    di "[specurve] `c(current_time)' - `nsig99' out of `c(N)' models have point estimates significant at 1% level."
+    di "[specurve] `c(current_time)' - `nsig95' out of `c(N)' models have point estimates significant at 5% level."
 
-category_array = []
+    /* Plotting */
+    label var lhs "Dependent variable"
+    label var focal "Focal variable"
+    label var rhs_excl_focal "Control variables"
+    label var fe "Fixed effects"
+    label var secluster "Standard error clustering"
+    label var cond "Condition"
 
-model_specs, label_to_variables, label_to_group = {}, {}, {}
-
-@dataclass
-class Specification:
-    choices: Dict[Group, Label]
-    conditions: Dict[Group, Label]
-    variables: Dict[Label, Variables]
-    focal_variable: Label
-    specification = None
-    stata_cmd = None
-
-    def __post_init__(self):
-        # human-readable model specification
-        self.specification = {**self.choices, **self.conditions}
-        # building the Stata command for this specification
-        lhs = self.variables.get(self.choices.get("Dependent Variable"))
-        key = self.variables.get(self.choices.get("Focal Variable"))
-        ctrl = self.variables.get(self.choices.get("Control Variables"))
-        self.stata_cmd = f"reghdfe {lhs} {key} {ctrl}, "
-        fixed_effects = self.variables.get(self.choices.get("Fixed Effects"))
-        if fixed_effects:
-            self.stata_cmd += f"absorb({fixed_effects}) "
-        else:
-            self.stata_cmd += "noabsorb "
-        se_cluster = self.variables.get(
-            self.choices.get("Standard Error Clustering")
-        )
-        if se_cluster:
-            self.stata_cmd += f"cluster({se_cluster})"
-        if self.conditions:
-            combined_condition = " & ".join(
-                f"({self.variables.get(condition)})"
-                for _, condition in self.conditions.items()
-            )
-            self.stata_cmd = self.stata_cmd.replace(
-                ",", f" if {combined_condition},"
-            )
-
-
-def read_configuration(config_file: str):
-    SFIToolkit.errprintlnDebug("Debug mode on.")
-    try:
-        with open(config_file) as f:
-            cfg = yaml.load(f, Loader=yaml.FullLoader)
-    except FileNotFoundError:
-        SFIToolkit.errprintln("Configuration file not found.")
-        SFIToolkit.exit(601)
-
-    choices: Dict[Group, List[Dict[Label, Variables]]] = cfg.get("Choices")
-    conditions: Dict[Group, List[Dict[Label, Variables]]] = cfg.get("Conditions", {})
-
-    # Check the presence of choices in configuration
-    if not choices:
-        SFIToolkit.errprintln("No choices found in configuration file.")
-        SFIToolkit.exit(198)
-    # Check all required groups presented
-    if not required_keywords.issubset(choices.keys()):
-        SFIToolkit.errprintln("Insufficient specification.")
-        SFIToolkit.exit(198)
-
-    # Build dicts of label to its variables and of label to its group
-    global label_to_variables  # bad usage of global variable but anyway
-    global label_to_group  # bad usage of global variable but anyway
-
-    label_to_variables = {
-        **lbl_to_vars(choices),
-        **lbl_to_vars(conditions),
+    local offset 0
+    local nylabs -1
+    local maxlablength 0
+    foreach v in lhs focal rhs_excl_focal fe secluster cond {
+        encode `v', gen(`v'_encoded) label(`v'_label)
+        drop `v'
+        rename `v'_encoded `v'
+        su `v', meanonly
+        local offset = `offset' + `r(max)' 
+        forval i=1/`r(max)' {
+          local ++nylabs
+          local lab`i' : label `v'_label `i' 
+          /* to calculate the length of phantom label */
+          if (strlen("`lab`i''") > `maxlablength') {
+            local maxlablength = strlen("`lab`i''")
+            local maxlab "`lab`i''"
+          }
+          local newval = `i' - `offset'
+          label def `v'_label `newval' "`lab`i''", modify
+          label def lhs_label `newval' "`lab`i''", modify
+        }
+        qui: replace `v' = `v' - `offset' 
+        label val `v' `v'_label
+        label val lhs lhs_label
     }
-    label_to_group = {
-        **lbl_to_grp(choices),
-        **lbl_to_grp(conditions),
-    }
+    /* phantom label */
+    local phantomlab ""
+    /* local maxlablength = `maxlablength' - strlen("benchmark") */
+    /* forval j=1/`maxlablength' {
+      local phantomlab = "`phantomlab' "
+    } */
+    /* local phantomlab = "`phantomlab' benchmark" */
+    local phantomlab "{stMono:`maxlab'}"
 
-    focal_vars = choices.get("Focal Variable")
-    alternatives: Dict[Group, List[Dict[Label, Variables]]] = {
-        **choices,
-        **conditions,
-    }
+    di "[specurve] `c(current_time)' - Plotting specification curve..."
+    tempname coefficientplot
+    tw (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
+      (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
+	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
+	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
+      ,legend (order(3 "Point estimate (significant at 1% level)" 4 "Point estimate (insignificant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
+	    pos(12) ring(1) rows(1) size(small) symysize(small) symxsize(small)) ///
+      xtitle("") ytitle("") ///
+      nodraw yline(`benchmark') ///
+      yscale() xscale(off) ///
+      xlab(1(1)`nspecs', noticks nolabels)  /// 
+      ylab(, angle(0) labsize(small)) ///
+      ylab(0.004 "`phantomlab'", notick add custom labcolor(white%0) angle(0) labsize(small)) ///
+      graphregion(fcolor(white) lcolor(white)) ///
+      plotregion(fcolor(white) lcolor(white)) ///
+      name("`coefficientplot'",replace) ///
+      fysize(65)
 
-    global category_array
-    category_array = []  # reset to empty list
-    for group, cases in choices.items():
-        if group == "Focal Variable":
-            continue
-        category_array.append(f"<b>{group}</b>")
-        for case in cases:
-            label, _ = next(iter(case.items()))
-            category_array.append(label)
+    tempname specificationplot
+    tw ///
+      (scatter lhs rank) ///
+      (scatter focal rank) ///
+      (scatter rhs_excl_focal rank) ///
+      (scatter fe rank) ///
+      (scatter secluster rank) ///
+      (scatter cond rank) ///
+      , nodraw legend(size(small) rows(1) pos(6)) xtitle("") ytitle("") ///
+      yscale() xscale() ///
+      xlab(, noticks nolabels) ///
+      ylab(0(1)-`nylabs', valuelabel angle(0) nogrid labsize(small)) ///
+      ylab(-0.5 "`phantomlab' 000", notick add custom labcolor(white%0) angle(0) labsize(small)) ///
+      graphregion(fcolor(white) lcolor(white)) ///
+      plotregion(fcolor(white) lcolor(white)) ///
+      name("`specificationplot'", replace) ///
+      fysize(35) 
 
-    for group, cases in conditions.items():
-        if group == "Focal Variable":
-            continue
-        category_array.append(f"<b>{group}</b>")
-        for case in cases:
-            label, _ = next(iter(case.items()))
-            category_array.append(label)
+    graph combine `coefficientplot' `specificationplot' ///
+    , cols(1) graphregion(color(white)) imargin(0 0 0 0) ///
+    name(specurve, replace) iscale(0.7) xcommon
+  }
 
-    if not len(focal_vars):
-        SFIToolkit.errprintln("No focal variable found in configuration file.")
-        SFIToolkit.exit(198)
-
-    return focal_vars, choices, conditions, alternatives
-
-def gen_models_from(config_file: str):
-
-    focal_vars, choices, conditions, alternatives = read_configuration(config_file)
-    labels_of_ = lambda x: [k for cs in x.values() for c in cs for k in c] if x else []
-    labels_of_choices: List[Label] = labels_of_(choices)
-    labels_of_conditions: List[Label] = labels_of_(conditions)
-    # Compose the Stata command to estimate the models
-    models = []
-    for focal_var in focal_vars:
-        label_focal_var, _ = next(iter(focal_var.items()))
-        alternatives["Focal Variable"] = [focal_var]
-        for spec in itertools.product(*alternatives.values()):
-            labels_of_spec: List[Label] = [k for case in spec for k, v in case.items()]
-            _choices, _conditions = {}, {}
-            for label in labels_of_spec:
-                group = label_to_group.get(label)
-                if label in labels_of_choices:
-                    _choices.update({group: label})
-                elif label in labels_of_conditions:
-                    _conditions.update({group: label})
-            models.append(
-                Specification(
-                    _choices, _conditions, label_to_variables, label_focal_var
-                )
-            )
-    # Store the Stata command to macro (to be executed in Stata environment)
-    Scalar.setValue("num_models", len(models))
-    global model_specs
-    model_specs = {}  # reset model_specs
-    for i in range(len(models)):
-        model = models[i]
-        Macro.setLocal(f"model{i+1}_cmd", model.stata_cmd)
-        Macro.setLocal(
-            f"model{i+1}_focal_var",
-            label_to_variables.get(model.focal_variable),
-        )
-        model_specs.update({f"model{i+1}": model.specification})
-
-def gen_specurve_plot(results_file: str, output_file: str, width: int, height: int, fontscale: float, annotation_shift: int, theme: str, transparent_bg: int):
-    SFIToolkit.displayln("Generating specification curve plots.")
-    if theme and theme not in ["plotly", "plotly_white", "plotly_dark", "ggplot2", "seaborn", "simple_white", "none"]:
-        SFIToolkit.errprintln("Theme not available.")
-        SFIToolkit.exit(198)
-    transparent_bg = True if transparent_bg == 1 else False
-    SFIToolkit.errprintlnDebug(f"Results file={results_file}")
-    frame = Frame.connect(results_file)
-    data = frame.getAsDict()
-    results = pd.DataFrame.from_dict(data).set_index("model")
-    annotation = pd.DataFrame(model_specs).T
-    data = annotation.join(results)
-
-    depvars = list(set(data["Dependent Variable"]))
-    SFIToolkit.displayln(f"Dependent variable={depvars}")
-    n_depvars = len(depvars)
-    key_vars = set(results["variable"])
-
-    # Let's focus on one focal variable first
-    focal_var = key_vars.pop()
-
-    #######################################
-    traces_ests, traces_spec = [], []
-    y1axes, y2axes, y3axes = [], [], []
-    x1axes, x2axes = [], []
-
-    for idx, depvar in enumerate(depvars):
-        (
-            trace_ests,
-            trace_spec,
-            y1_layout,
-            y2_layout,
-            y3_layout,
-            x1_layout,
-            x2_layout,
-        ) = gen_traces(data, depvar, focal_var, idx, n_depvars)
-
-        traces_ests.extend(trace_ests)
-        traces_spec.extend(trace_spec)
-        y1axes.append(y1_layout)
-        y2axes.append(y2_layout)
-        y3axes.append(y3_layout)
-        x1axes.append(x1_layout)
-        x2axes.append(x2_layout)
-
-    focal_var_label = list(label_to_variables.keys())[
-        list(label_to_variables.values()).index(focal_var)
-    ]
-    fig = go.Figure(
-        data=traces_ests + traces_spec,
-        layout=dict(
-            showlegend=False,
-            width=1200,
-            height=900,
-            title=dict(text=f"Specification Curve Analysis of {focal_var_label}", 
-                x=0.5,
-                font=dict(size=22),
-                xanchor="center", yanchor="top"),
-            paper_bgcolor=None if not transparent_bg else "rgba(0,0,0,0)",
-            plot_bgcolor=None if not transparent_bg else "rgba(0,0,0,0)",
-            template=theme
-        ),
-    )
-
-    for idx in range(len(depvars)):
-        fig["layout"][f"xaxis{idx*2+1}"] = x1axes[idx]
-        fig["layout"][f"xaxis{idx*2+2}"] = x2axes[idx]
-        fig["layout"][f"yaxis{idx*3+1}"] = y1axes[idx]
-        fig["layout"][f"yaxis{idx*3+2}"] = y2axes[idx]
-        fig["layout"][f"yaxis{idx*3+3}"] = y3axes[idx]
-
-    # Annotation
-
-    tmp = data[data["Dependent Variable"] == depvars[0]].sort_values(
-        ["beta"], ascending=False
-    )
-    annotations = [
-        dict(
-            xref="paper",
-            yref="y3",
-            x=0.01,
-            xshift=annotation_shift,
-            y=0,
-            xanchor="right",
-            yanchor="middle",
-            text="Threshold of 0",
-            font={"size": 12*fontscale},
-            showarrow=False,
-        ),
-        dict(
-            xref="paper",
-            yref="y3",
-            x=0.01,
-            xshift=annotation_shift,
-            y=tmp["beta"][0],
-            xanchor="right",
-            yanchor="middle",
-            text="<b>coefficient estimates</b>",
-            font={"size": 13*fontscale},
-            showarrow=False,
-        ),
-        dict(
-            xref="paper",
-            yref="y3",
-            x=0.01,
-            xshift=annotation_shift,
-            y=tmp["ub"][0],
-            xanchor="right",
-            yanchor="middle",
-            text="95% Upper Interval",
-            font={"size": 10*fontscale},
-            showarrow=False,
-        ),
-        dict(
-            xref="paper",
-            yref="y3",
-            x=0.01,
-            xshift=annotation_shift,
-            y=tmp["lb"][0],
-            xanchor="right",
-            yanchor="middle",
-            text="95% Lower Interval",
-            font={"size": 10*fontscale},
-            showarrow=False,
-        ),
-        dict(
-            xref="paper",
-            yref="y1",
-            x=0.01,
-            xshift=annotation_shift,
-            y=tmp["obs"][0],
-            xanchor="right",
-            yanchor="middle",
-            text="sample size",
-            font={"size": 10*fontscale},
-            showarrow=False,
-        ),
-    ]
-    fig.layout.annotations = annotations
-    fig.write_image(output_file, width=width, height=height)
-
-
-def gen_traces(data, depvar, focal_var, idx, n_depvars):
-
-    y1 = f"y{idx*3+1}"
-    y2 = f"y{idx*3+2}"
-    y3 = f"y{idx*3+3}"
-    x1 = f"x{idx*2+1}"
-    x2 = f"x{idx*2+2}"
-
-    data = data[data["Dependent Variable"] == depvar].copy()
-    groups = set(data.columns) - set(
-        ["ub", "lb", "beta", "obs", "model", "Focal Variable", "variable"]
-    )
-    data.sort_values(["beta"], inplace=True, ascending=False)
-    data.index = [f"{i+1}" for i in range(len(data))]
-
-    trace_ests = [
-        # Sample size
-        # yaxis is set to y1 because yaxis1 is drawn first
-        go.Bar(
-            x=data.index,
-            y=data["obs"],
-            name="Observations",
-            xaxis=x1,
-            yaxis=y1,
-            marker_color="rgba(150, 150, 150, 0.8)",
-        ),
-        # Confidence interval lower bound
-        # yaxis3 is drawn after y1 so these series overlay sample size
-        go.Scatter(
-            x=data.index,
-            y=data["lb"],
-            name="95% Interval (Lower)",
-            mode="lines+markers",
-            xaxis=x1,
-            yaxis=y3,
-            showlegend=True,
-            marker_color="rgb(200, 200, 200)",
-        ),
-        # Confidence internval upper bound
-        go.Scatter(
-            x=data.index,
-            y=data["ub"],
-            name="95% Interval (Upper)",
-            mode="lines+markers",
-            xaxis=x1,
-            yaxis=y3,
-            showlegend=True,
-            fill="tonexty",
-            marker_color="rgb(200, 200, 200)",
-        ),
-        # Beta estimates
-        go.Scatter(
-            x=data.index,
-            y=data["beta"],
-            name=f"{focal_var.upper()}",
-            mode="lines+markers+text",
-            text=[round(data["beta"][0], 2)]
-            + [None] * (len(data) - 2)
-            + [round(data["beta"][-1], 2)],
-            textposition="bottom center",
-            xaxis=x1,
-            yaxis=y3,
-            showlegend=True,
-            marker_color="#3366CC",
-        ),
-        # Threshold y=0
-        go.Scatter(
-            x=data.index,
-            y=[0] * len(data),
-            name="Threshold=0",
-            xaxis=x1,
-            yaxis=y3,
-            mode="lines",
-            marker_color="grey",
-        ),
-    ]
-    trace_spec = [
-        go.Scatter(
-            x=data.index,
-            y=data[col],
-            mode="markers",
-            showlegend=False,
-            xaxis=x2,
-            yaxis=y2,
-        )
-        for col in groups
-    ] + [
-        go.Scatter(
-            x=data.index,
-            y=[col],
-            showlegend=False,
-            marker_color="rgba(255,255,255,0)",
-            xaxis=x2,
-            yaxis=y2,
-        )
-        for col in category_array
-        if "<b>" in col
-    ]
-
-    domain_len = 1 / n_depvars
-
-    x1_layout = dict(
-        showticklabels=False,
-        anchor=y1,
-        domain=[domain_len * idx + domain_len / 12, domain_len * (idx + 1)],
-    )
-    x2_layout = dict(
-        anchor=y2,
-        domain=[domain_len * idx + domain_len / 12, domain_len * (idx + 1)],
-        title="Model",
-    )
-    y1_layout = dict(
-        anchor=x1,
-        showticklabels=False,
-        side="right",
-        domain=[0.6, 1],
-        range=(0, max(data["obs"]) * 6),
-    )
-    y2_layout = dict(
-        domain=[0, 0.6],
-        anchor=x2,
-        showticklabels=False if idx > 0 else True,
-        showgrid=False,
-        categoryorder="array",
-        categoryarray=list(reversed(category_array)),
-    )
-    y3_layout = dict(
-        anchor=x1,
-        overlaying=y1,
-        side="left",
-        zeroline=True,
-        showgrid=False,
-        showticklabels=False
-        # ticks="inside",
-        # tickfont=dict(size=5),
-    )
-    return (
-        trace_ests,
-        trace_spec,
-        y1_layout,
-        y2_layout,
-        y3_layout,
-        x1_layout,
-        x2_layout,
-    )
-
-
-
-
-# Some helper functions
-
-# build dicts of label to its vars and of label to its group
-lbl_to_vars = lambda x: {
-    k: v for cs in x.values() for c in cs for k, v in c.items()
-}
-lbl_to_grp = lambda x: {k: grp for grp, cs in x.items() for c in cs for k in c}
-
-# check if label x is in group of choices/conditions
-in_group = lambda x, group, alterinatives: any(
-    x in c for c in alterinatives.get(group)
-)
+  di "[specurve] `c(current_time)' - Completed."
 end
 
-capture drop program specurve
-program specurve
-    /* args config width height */
-    syntax using/ [, Width(integer 900) Height(integer 1100) FONTScale(real 1.2) annotationshift(integer 50) theme(string) transparent_background]
-    if (mi("`theme'")) local theme "plotly"
-    if (mi("`transparent_background'")) {
-        local transparent_background 0
+mata:
+
+struct specification {
+  /* vars */
+  string scalar lhs
+  string scalar focal_var
+  string scalar rhs_excl_focal
+  string scalar condition
+  string scalar fixed_effects
+  string scalar standard_error_clustering
+  /* labels */
+  string scalar label_lhs
+  string scalar label_focal_var
+  string scalar label_rhs_excl_focal
+  string scalar label_condition
+  string scalar label_fixed_effects
+  string scalar label_standard_error_clustering
+  /* misc */
+  string scalar stata_cmd
+  string scalar configstr
+}
+
+struct config {
+  /* which group this config belongs to, 
+     e.g., "Dependent Variable", "Focal Variable", etc. */
+  string scalar group
+  /* the label of the config */
+  string scalar label
+  /* the variable(s) for the config */
+  string scalar variables
+}
+
+struct group {
+  string scalar name
+  real scalar nlabels
+}
+
+void main(string scalar filename, real scalar nooutput) {
+  struct config scalar config
+  struct config vector choices, conditions
+  struct specification vector specs
+  choices = J(200, 1, config)
+  conditions = J(200, 1, config)
+  /* procedures */
+  read_configuration(filename, &choices, &conditions)
+  specs = compose_all_specifications(choices, conditions)
+  estimate(&specs, nooutput)
+}
+
+void estimate(pointer(struct specification vector) scalar specs,
+              real scalar nooutput) {
+  real scalar i, totalspecs
+  string scalar cmd
+  struct specification scalar spec
+  totalspecs = length(*specs)
+  printf("[specurve] %s - %g total specifications to estimate.\n", 
+           c("current_time"), totalspecs)
+  /* Stata frame to store results */
+  stata("cap frame drop specurve_res")
+  stata("mkf specurve_res double(beta lb95 ub95 lb99 ub99) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd)")
+  for (i=1; i<=totalspecs; i++) {
+    printf("[specurve] %s - Estimating model %g of %g\n", 
+           c("current_time"), i, totalspecs)
+    spec = (*specs)[i]
+    cmd = sprintf("%s %s %s %s", 
+                  spec.stata_cmd,
+                  spec.lhs,
+                  spec.focal_var,
+                  spec.rhs_excl_focal)
+    /* conditions */
+    if (strlen(spec.condition))
+      cmd = sprintf("%s if (%s)", cmd, spec.condition)
+    /* fixed effects */
+    if (strlen(spec.fixed_effects))
+      cmd = sprintf("%s, absorb(%s)", cmd, spec.fixed_effects)
+    else
+      cmd = sprintf("%s, noa", cmd)
+    /* standard error clustering */
+    if (strlen(spec.standard_error_clustering))
+      cmd = sprintf("%s vce(cluster %s)", cmd, spec.standard_error_clustering)
+    /* execute the Stata command */
+    stata(cmd, nooutput)
+    /* results */
+    /* real scalar _b_focal_var = st_matrix("e(b)")[1] */
+    stata(sprintf("local est = _b[%s]", spec.focal_var))
+    stata(sprintf("local lb95 = _b[%s] - invttail(e(df_r),0.025)*_se[%s]", 
+                  spec.focal_var, spec.focal_var))
+    stata(sprintf("local ub95 = _b[%s] + invttail(e(df_r),0.025)*_se[%s]", 
+                  spec.focal_var, spec.focal_var))
+    stata(sprintf("local lb99 = _b[%s] - invttail(e(df_r),0.005)*_se[%s]", 
+                  spec.focal_var, spec.focal_var))
+    stata(sprintf("local ub99 = _b[%s] + invttail(e(df_r),0.005)*_se[%s]", 
+                  spec.focal_var, spec.focal_var))
+    string scalar framepost, model_id
+    model_id = sprintf("model %g", i)
+    framepost = "frame post specurve_res "
+    framepost = sprintf("%s (%s) ", framepost, st_local("est"))
+    framepost = sprintf("%s (%s) ", framepost, st_local("lb95"))
+    framepost = sprintf("%s (%s) ", framepost, st_local("ub95"))
+    framepost = sprintf("%s (%s) ", framepost, st_local("lb99"))
+    framepost = sprintf("%s (%s) ", framepost, st_local("ub99"))
+    framepost = sprintf("%s (%g) ", framepost, st_numscalar("e(N)"))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(model_id))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_lhs))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_focal_var))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_rhs_excl_focal))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_fixed_effects))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_standard_error_clustering))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_condition))
+    framepost = sprintf("%s (%s)", framepost, _wrap(cmd))
+    stata(framepost)
+  }
+}
+
+string scalar _wrap(string scalar w) {
+  return(sprintf("%s%s%s", char(34), w, char(34)))
+}
+
+
+struct specification vector compose_all_specifications(
+                                struct config vector choices, 
+                                struct config vector conditions) {
+  /* number of distinct groups from both CHOICES and CONDITIONS */
+  string vector groupnames, uniquegroups
+  struct group vector groupvec
+  struct group scalar group
+  groupnames = J(length(choices)+length(conditions),1,"")
+  real scalar i, j, k
+  for (i=1; i<=length(choices); i++) 
+    groupnames[i] = choices[i].group
+  for (i=1; i<=length(conditions); i++) 
+    groupnames[i+length(choices)] = conditions[i].group
+  uniquegroups = uniqrows(groupnames)
+  real scalar hasemptygroupname
+  hasemptygroupname = 0
+  for (i=1; i<=length(uniquegroups); i++) {
+    if (uniquegroups[i]=="") {
+      hasemptygroupname = 1
+      break
     }
-    else {
-        local transparent_background 1
+  }
+  if (hasemptygroupname)
+    groupvec = J(length(uniquegroups)-1,1,group)
+  else
+    groupvec = J(length(uniquegroups),1,group)
+  /* group name and number of configs under each group */
+  k = 0
+  for (i=1; i<=length(uniquegroups); i++) {
+    if (uniquegroups[i] == "") continue
+    k = k + 1
+    groupvec[k].name = uniquegroups[i]
+    groupvec[k].nlabels = 0
+    for (j=1; j<=length(choices); j++) {
+      if (choices[j].group==groupvec[k].name) 
+        groupvec[k].nlabels = groupvec[k].nlabels + 1
     }
-    tempname res
-    mkf `res' str32(model variable) double(beta lb ub) int(obs)
-    
-    python: gen_models_from("`using'")
-    
-    di as text "`=num_models' models to estimate"
-    forvalues i=1/`=num_models' {
-        di as text "Estimating model `i'"
-        local id = "model`i'"
-        local var = "`model`i'_focal_var'"
-        
-        qui `model`i'_cmd'
-        local est = _b[`var']
-        local lb = _b[`var'] - invttail(e(df_r),0.025)*_se[`var']
-        local ub = _b[`var'] + invttail(e(df_r),0.025)*_se[`var']
-        frame post `res' ("`id'") ("`var'") (`est') (`lb') (`ub') (`e(N)')
-    }	
-    
-    local output = "output.png"
-    python: gen_specurve_plot("`res'", "`output'", `width', `height', `fontscale', `annotationshift', "`theme'", `transparent_background')
-    
-    frame drop `res'
-    
-    di as smcl "The specification curve is saved at {browse `output'}"
-end 
+    for (j=1; j<=length(conditions); j++) {
+      if (conditions[j].group==groupvec[k].name) 
+        groupvec[k].nlabels = groupvec[k].nlabels + 1
+    }
+  }
+
+  /* find all combinations */
+  real scalar numspecs
+  numspecs = 1
+  for (i=1; i<=length(groupvec); i++) {
+    numspecs = numspecs * groupvec[i].nlabels
+  }
+  /* printf("%g total specifications to estimate.\n", numspecs) */
+
+  struct specification scalar spec
+  struct specification vector specs
+  spec.stata_cmd = "reghdfe"
+  specs = J(numspecs, 1, spec)
+
+  cartesian_prod(1, groupvec, &specs, 1, "")
+
+  /* making specifications */
+  real scalar groupnum, labelnum
+  string vector conftokens, conftoken
+  string scalar groupname, labelname, configvar
+  for (k=1; k<=length(specs); k++) {
+    /* specs[k].configstr is like: "1-2 2-1 3-5 4-1 5-2 6-2"
+       group 1 - label 2
+       group 2 - label 1
+       ...
+     */
+    conftokens = tokens(specs[k].configstr)
+    for (i=1; i<=length(conftokens); i++) {
+      conftoken = tokens(conftokens[i], "-")
+      groupnum = strtoreal(conftoken[1])
+      labelnum = strtoreal(conftoken[3])
+      groupname = groupvec[groupnum].name
+      labelname = get_config(labelnum, groupname, &choices, &conditions, "lab")
+      configvar = get_config(labelnum, groupname, &choices, &conditions, "var")
+      /* printf("  %s %s\n", groupname, labelname) */
+      /* write into the specs */
+      make_specification(&(specs[k]), groupname, labelname, configvar)
+    }
+
+  }
+  return(specs)
+}
+
+
+void make_specification(pointer(struct specification scalar) scalar spec,
+                        string scalar groupname, string scalar label,
+                        string scalar configvar) {
+  if (strpos(strlower(groupname), "focal variable")) {
+    (*spec).focal_var = configvar
+    (*spec).label_focal_var = label
+  }
+  else if (strpos(strlower(groupname), "dependent variable")) {
+    (*spec).lhs = configvar
+    (*spec).label_lhs = label
+  }
+  else if (strpos(strlower(groupname), "control variables")) {
+    (*spec).rhs_excl_focal = configvar
+    (*spec).label_rhs_excl_focal = label
+  }
+  else if (strpos(strlower(groupname), "fixed effects")) {
+    (*spec).fixed_effects = configvar
+    (*spec).label_fixed_effects = label
+  }
+  else if (strpos(strlower(groupname), "standard error clustering")) {
+    (*spec).standard_error_clustering = configvar
+    (*spec).label_standard_error_clustering = label
+  }
+  /* condition, if not one of the choices */
+  else {
+    (*spec).condition = configvar
+    (*spec).label_condition = label
+  }
+}
+
+
+string scalar get_config(real scalar id, string scalar groupname,
+                         pointer(struct config vector) scalar choices,
+                         pointer(struct config vector) scalar conditions,
+                         string scalar returnval) {
+  real scalar i, k
+  k = 0
+  for (i=1; i<=length(*choices); i++) {
+    if ((*choices)[i].group == groupname) k = k + 1
+    if (k == id) 
+      if (returnval=="lab") return((*choices)[i].label)
+      else if (returnval=="var") return((*choices)[i].variables)
+  }
+  k = 0
+  for (i=1; i<=length(*conditions); i++) {
+    if ((*conditions)[i].group == groupname) k = k + 1
+    if (k == id)
+      if (returnval=="lab") return((*conditions)[i].label)
+      else if (returnval=="var") return((*conditions)[i].variables)
+  }
+  return("")
+}
+
+void cartesian_prod(real scalar i, struct group vector groupvec, 
+                    pointer(struct specification vector) scalar specs,
+                    real scalar depth,
+                    string scalar configstr) {
+  real scalar j, k
+  string scalar cnext
+  if (depth>length(groupvec)) {
+    for (k=1; k<=length(*specs); k++) {
+      if ((*specs)[k].configstr == "") {
+        (*specs)[k].configstr = configstr
+        break
+      }
+    }
+    return
+  }
+  for (j=1; j<=groupvec[i].nlabels; j++) {
+    cnext = configstr + strofreal(i) + "-" +  strofreal(j) + " "
+    cartesian_prod(i+1, groupvec, specs, depth+1, cnext)
+  }
+}
+
+void read_configuration(string scalar filename,
+                        pointer(struct config vector) scalar choices,
+                        pointer(struct config vector) scalar conditions) {
+
+  /* declariations and inits */
+  struct config scalar    config
+  real scalar             input_fh
+  string scalar           line, groupname
+  real scalar             isProcessingChocies, isProcessingConditions
+  real scalar             numChoices, numConditions
+  real scalar             comment_pos
+  isProcessingChocies     = 0
+  isProcessingConditions  = 0
+  numChoices              = 0
+  numConditions           = 0
+
+  input_fh = fopen(filename, "r")
+
+  /* process line by line */
+  while ( (line=fget(input_fh)) != J(0,0,"") ) {
+    /* remove comments and trim line */
+    comment_pos = strpos(line, "#")
+    if (comment_pos)
+      line = substr(line, 1, comment_pos-1)
+    line = strtrim(line)
+    if (!strlen(line)) continue
+    /* check if is processing CHOICES */
+    if (strpos(strlower(line), "choices") & length(tokens(line))==1) {
+      isProcessingConditions = 0
+      isProcessingChocies = 1
+    }
+    /* check if is processing CONDITIONS */
+    else if (strpos(strlower(line), "conditions") & length(tokens(line))==1) {
+      isProcessingChocies = 0
+      isProcessingConditions = 1
+    }
+
+    if (isProcessingChocies) {
+      if (strpos(line, "-") != 1) {
+        groupname = line
+      } else {
+        config = process_config_line(groupname, line)
+        numChoices = numChoices + 1
+        (*choices)[numChoices] = config
+      }
+    }
+    else if (isProcessingConditions) {
+      if (strpos(line, "-") != 1) {
+        groupname = line
+      } else {
+        config = process_config_line(groupname, line)
+        numConditions = numConditions + 1
+        (*conditions)[numConditions] = config
+      }
+    }
+  }
+
+  fclose(input_fh)
+}
+
+struct config scalar process_config_line(string scalar group, 
+                                         string scalar line) {
+  /* This function reads a line and return the config (group, label and vars) */
+  struct config scalar config
+  /* remove leading "-" which marks the line as a config alternative */
+  line = strtrim(substr(line, 2, strlen(line)-1))
+  /* parse label and variables */
+  config.group = group
+  config.label = substr(line, 1, strpos(line, ":")-1)
+  config.variables = strtrim(substr(line, strpos(line, ":")+1, strlen(line)-1))
+  return(config)
+}
+
+end
