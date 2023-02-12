@@ -14,6 +14,8 @@ program specurve
     if (`descending') gsort -beta
     else gsort beta
     gen rank = _n
+    su beta, meanonly
+    local beta_obs1 = `r(min)'
     gen sig95 = (`benchmark' < lb95)  | (`benchmark' > ub95)
     gen sig99 = (`benchmark' < lb99)  | (`benchmark' > ub99)
     qui: count
@@ -33,80 +35,64 @@ program specurve
     label var secluster "Standard error clustering"
     label var cond "Condition"
 
-    local offset 0
+    /* Number of lines in the lower panel (specificaitons) */
     local nylabs -1
-    local maxlablength 0
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
-        encode `v', gen(`v'_encoded) label(`v'_label)
-        drop `v'
-        rename `v'_encoded `v'
-        su `v', meanonly
-        local offset = `offset' + `r(max)' 
+        encode `v', gen(`v'_encoded)
+        su `v'_encoded, meanonly
         forval i=1/`r(max)' {
           local ++nylabs
-          local lab`i' : label `v'_label `i' 
-          /* to calculate the length of phantom label */
-          if (strlen("`lab`i''") > `maxlablength') {
-            local maxlablength = strlen("`lab`i''")
-            local maxlab "`lab`i''"
-          }
-          local newval = `i' - `offset'
-          label def `v'_label `newval' "`lab`i''", modify
-          label def lhs_label `newval' "`lab`i''", modify
         }
-        qui: replace `v' = `v' - `offset' 
-        label val `v' `v'_label
-        label val lhs lhs_label
     }
-    /* phantom label */
-    local phantomlab ""
-    /* local maxlablength = `maxlablength' - strlen("benchmark") */
-    /* forval j=1/`maxlablength' {
-      local phantomlab = "`phantomlab' "
-    } */
-    /* local phantomlab = "`phantomlab' benchmark" */
-    local phantomlab "{stMono:`maxlab'}"
+    // Range of coeffs and CIs	
+    su lb99, meanonly
+    if (`benchmark' < `r(min)') local minlb `benchmark'
+    else local minlb `r(min)'
+    su ub99, meanonly
+    if (`benchmark' > `r(max)') local maxub `benchmark'
+    else local maxub `r(max)'
+    local range = `maxub' - `minlb'
+    local rangelg = `range' / 0.95 // increase range a bit
+    local ymin = round(`minlb' - (`rangelg'-`range')/2, 0.001) // no rounding?
+    local ymax = round(`maxub' + (`rangelg'-`range')/2, 0.001)
+    local ystep = round((`ymax'-`ymin')/4, 0.001) 
+    // We want the upper panel coeffs to span about 70% of the area
+    // the lower panel specifications about 30% of the area
+    // `nylabs' lines in the lower panel that should span 0.3*(ymax-ymin)
+    // 0.3*(`ymax'-`ymin')/`nylabs' is step size
+    local ysteplowerpanel = 0.3*(`ymax'-`ymin')/`nylabs' 
+    
+    local offset 2
+    foreach v in lhs focal rhs_excl_focal fe secluster cond {
+        su `v'_encoded, meanonly
+        qui: replace `v'_encoded = `ymin' - (`offset'+`v'_encoded) * `ysteplowerpanel'
+        local offset = `offset' + `r(max)'
+    }
 
     di "[specurve] `c(current_time)' - Plotting specification curve..."
-    tempname coefficientplot
-    tw (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
-      (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
+    tempname specurve_p
+    tw  ///
+        (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
+        (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
 	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
-      ,legend (order(3 "Point estimate (significant at 1% level)" 4 "Point estimate (insignificant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
+        (scatter lhs_encoded rank, msize(vsmall)) ///
+        (scatter focal_encoded rank, msize(vsmall)) ///
+        (scatter rhs_excl_focal_encoded rank, msize(vsmall)) ///
+        (scatter fe_encoded rank, msize(vsmall)) ///
+        (scatter secluster_encoded rank, msize(vsmall)) ///
+        (scatter cond_encoded rank, msize(vsmall)) ///
+      , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
 	    pos(12) ring(1) rows(1) size(small) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///
-      nodraw yline(`benchmark') ///
-      yscale() xscale(off) ///
-      xlab(1(1)`nspecs', noticks nolabels)  /// 
-      ylab(, angle(0) labsize(small)) ///
-      ylab(0.004 "`phantomlab'", notick add custom labcolor(white%0) angle(0) labsize(small)) ///
-      graphregion(fcolor(white) lcolor(white)) ///
-      plotregion(fcolor(white) lcolor(white)) ///
-      name("`coefficientplot'",replace) ///
-      fysize(65)
-
-    tempname specificationplot
-    tw ///
-      (scatter lhs rank) ///
-      (scatter focal rank) ///
-      (scatter rhs_excl_focal rank) ///
-      (scatter fe rank) ///
-      (scatter secluster rank) ///
-      (scatter cond rank) ///
-      , nodraw legend(size(small) rows(1) pos(6)) xtitle("") ytitle("") ///
+      yline(`benchmark') ///
       yscale() xscale() ///
-      xlab(, noticks nolabels) ///
-      ylab(0(1)-`nylabs', valuelabel angle(0) nogrid labsize(small)) ///
-      ylab(-0.5 "`phantomlab' 000", notick add custom labcolor(white%0) angle(0) labsize(small)) ///
+      xlab(minmax, noticks labsize(small))  /// 
+      ylab(`ymin'(`ystep')`ymax', angle(0) nogrid labsize(small)) ///
+      ylab(`benchmark' "`benchmark'", add custom angle(0) nogrid notick labsize(small) labcolor(cranberry)) ///
       graphregion(fcolor(white) lcolor(white)) ///
       plotregion(fcolor(white) lcolor(white)) ///
-      name("`specificationplot'", replace) ///
-      fysize(35) 
-
-    graph combine `coefficientplot' `specificationplot' ///
-    , cols(1) graphregion(color(white)) imargin(0 0 0 0) ///
-    name(specurve, replace) iscale(0.7) xcommon
+      name("`specurve_plot'",replace) 
   }
 
   di "[specurve] `c(current_time)' - Completed."
