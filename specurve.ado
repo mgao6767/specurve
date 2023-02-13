@@ -1,9 +1,20 @@
+/* specurve - Specification Curve Analysis in Stata
+
+    author: Mingze Gao (University of Sydney)
+    email: mingze.gao@sydney.edu.au
+ */
 set matastrict on
 
 capture program drop specurve
 
 program specurve
-  syntax using/ [, OUTput DESCending Benchmark(real 0) relativesize(real 0.6)]
+  syntax using/ [, OUTput DESCending Benchmark(real 0) /// 
+    relativesize(real 0.6) ///
+    scale(real 1) ///
+    saving(passthru) ///
+    title(passthru) ///
+    name(passthru) ///
+    ]
 
   local nooutput = "`output'" != "output"
   local descending = "`descending'" == "descending"
@@ -18,9 +29,7 @@ program specurve
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
         encode `v', gen(`v'_encoded) label(`v'_label)
         su `v'_encoded, meanonly
-        forval i=1/`r(max)' {
-          local ++nylabs
-        }
+        local nylabs = `nylabs' + `r(max)' + 1
     }
 
     if (`descending') gsort -beta
@@ -69,17 +78,19 @@ program specurve
     local offset 2
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
         su `v'_encoded, meanonly
+        local pos = `ymin' - (`offset') * `ysteplowerpanel'
+        local labv: variable label `v' 
+        local speclabs1 `speclabs1' `pos' "{bf:`labv'}"
         forval i=1/`r(max)' {
             local lab`i' : label `v'_label `i' 
             local pos = `ymin' - (`offset'+`i') * `ysteplowerpanel'
             local speclabs `speclabs' `pos' "`lab`i''"
         }
         qui: replace `v'_encoded = `ymin' - (`offset'+`v'_encoded) * `ysteplowerpanel'
-        local offset = `offset' + `r(max)'
+        local offset = `offset' + `r(max)' + 1
     }
 
     di "[specurve] `c(current_time)' - Plotting specification curve..."
-    tempname specurve_p
     tw  ///
         (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
@@ -99,10 +110,12 @@ program specurve
       xlab(minmax, noticks labsize(small))  /// 
       ylab(`ymin'(`ystep')`ymax', angle(0) nogrid labsize(small)) ///
       ylab(`benchmark' "`benchmark'", add custom angle(0) nogrid notick labsize(small) labcolor(cranberry)) ///
+      ylab(`speclabs1', add custom angle(0) nogrid notick labsize(tiny)) ///
       ylab(`speclabs', add custom angle(0) nogrid notick labsize(tiny)) ///
       graphregion(fcolor(white) lcolor(white)) ///
       plotregion(fcolor(white) lcolor(white)) ///
-      name("`specurve_plot'",replace) 
+      scale(`scale') ///
+      `saving' `title' `name'
   }
 
   di "[specurve] `c(current_time)' - Completed."
