@@ -1,0 +1,9 @@
+v 3
+d specurve Stata package to plot specification curves
+d
+d {bf:Mingze Gao, Discipline of Finance, University of Sydney}
+d Stata package to plot specification curves.
+d
+d Distribution-Date: 20230213
+f specurve.ado
+f specurve.sthlp

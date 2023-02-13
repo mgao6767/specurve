@@ -1,0 +1,3 @@
+v 3
+d Mingze Gao, University of Sydney
+p specurve Stata package for plotting specification curves
