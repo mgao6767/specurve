@@ -34,11 +34,38 @@ net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/
 
 Check `help specurve` in Stata for a step-by-step guide.
 
+## Syntax
+
+**specurve** using _filename_, [**w**idth(real) **h**eight(real) realativesize(real) scale(real) title(string) saving(name) name(string) **desc**ending **out**put **b**enchmark(real)]
+
+### Options
+
+| options            | Description                                                                      |
+| ------------------ | -------------------------------------------------------------------------------- |
+| **w**idth(real)    | set width of the specification curve plot.                                       |
+| **h**eight(real)   | set height of the specification curve plot.                                      |
+| relativesize(real) | set the size of coefficients panel relative to the entire plot. Defaults to 0.6. |
+| scale(real)        | resize text, markers, and line widths.                                           |
+| title(string)      | set graph title.                                                                 |
+| saving(name)       | save graph as name.                                                              |
+| name(string)       | set graph title as string.                                                       |
+| **desc**ending     | plot coefficients in descending order.                                           |
+| **out**put         | display all regression outputs.                                                  |
+| **b**enchmark      | set the benchmark level. Defaults to 0.                                          |
+
 ## Troubleshooting
 
 * **When following the help file, Stata reports error "file example_config_nlswork_1.yml could not be opened".**
 
 This is mostly due to permission error. Stata does not have write permission to the current working directory so it cannot download the example configuration file. You can solve it by changing the working directory to somewhere else.
+
+## Thanks to
+
+Uri Simonsohn, Joseph Simmons and Leif D. Nelson for their paper "Specification Curve Analysis" (Nat Hum Behav, 2020, and previous working paper), first suggesting the specification curve.
+
+Rawley Heimer from Boston College who visited our discipline in 2019 and introduced the Specification Curve Analysis to us in the seminar on research methods.
+
+Martin Andresen from University of Oslo who wrote the [speccurve](https://github.com/martin-andresen/speccurve) and Hans Sievertsen from University of Bristol who wrote a [speccurve](https://github.com/hhsievertsen/speccurve) demo.
 
 ## Note
 
