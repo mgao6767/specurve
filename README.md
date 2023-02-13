@@ -1,6 +1,6 @@
 # specurve
 
-`specurve` is a Stata command for Specification Curve Analysis.
+`specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
 ## Installation
 
