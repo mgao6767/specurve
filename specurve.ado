@@ -3,7 +3,7 @@ set matastrict on
 capture program drop specurve
 
 program specurve
-  syntax using/ [, OUTput DESCending Benchmark(real 0)]
+  syntax using/ [, OUTput DESCending Benchmark(real 0) relativesize(real 0.6)]
 
   local nooutput = "`output'" != "output"
   local descending = "`descending'" == "descending"
@@ -13,6 +13,16 @@ program specurve
   mata: main("`using'", `nooutput')
 
   frame specurve_res {
+    /* Number of lines in the lower panel (specificaitons) */
+    local nylabs -1
+    foreach v in lhs focal rhs_excl_focal fe secluster cond {
+        encode `v', gen(`v'_encoded) label(`v'_label)
+        su `v'_encoded, meanonly
+        forval i=1/`r(max)' {
+          local ++nylabs
+        }
+    }
+
     if (`descending') gsort -beta
     else gsort beta
     gen rank = _n
@@ -37,15 +47,7 @@ program specurve
     label var secluster "Standard error clustering"
     label var cond "Condition"
 
-    /* Number of lines in the lower panel (specificaitons) */
-    local nylabs -1
-    foreach v in lhs focal rhs_excl_focal fe secluster cond {
-        encode `v', gen(`v'_encoded) label(`v'_label)
-        su `v'_encoded, meanonly
-        forval i=1/`r(max)' {
-          local ++nylabs
-        }
-    }
+    
     // Range of coeffs and CIs	
     su lb99, meanonly
     if (`benchmark' < `r(min)') local minlb `benchmark'
@@ -58,11 +60,11 @@ program specurve
     local ymin = round(`minlb' - (`rangelg'-`range')/2, 0.001) // no rounding?
     local ymax = round(`maxub' + (`rangelg'-`range')/2, 0.001)
     local ystep = round((`ymax'-`ymin')/4, 0.001) 
-    // We want the upper panel coeffs to span about 70% of the area
-    // the lower panel specifications about 30% of the area
+    // We want the upper panel coeffs to span about `relativesize' of the area
+    // the lower panel specifications about (1-`relativesize') of the area
     // `nylabs' lines in the lower panel that should span 0.3*(ymax-ymin)
     // 0.3*(`ymax'-`ymin')/`nylabs' is step size
-    local ysteplowerpanel = 0.3*(`ymax'-`ymin')/`nylabs' 
+    local ysteplowerpanel = (1-`relativesize')*(`ymax'-`ymin')/`nylabs' 
     
     local offset 2
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
@@ -83,12 +85,12 @@ program specurve
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
 	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
-        (scatter lhs_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
-        (scatter focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
-        (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
-        (scatter fe_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
-        (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
-        (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
+        (scatter lhs_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(lhs_encoded)) /// sort() preserves the order in config file
+        (scatter focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(focal_encoded)) ///
+        (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(rhs_excl_focal_encoded)) ///
+        (scatter fe_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(fe_encoded)) ///
+        (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(secluster_encoded)) ///
+        (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(cond_encoded)) ///
       , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
 	    pos(12) ring(1) rows(1) size(small) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///
