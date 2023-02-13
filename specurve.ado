@@ -7,6 +7,8 @@ program specurve
 
   local nooutput = "`output'" != "output"
   local descending = "`descending'" == "descending"
+  local specmsize vsmall
+  local specmsymbol o
 
   mata: main("`using'", `nooutput')
 
@@ -38,7 +40,7 @@ program specurve
     /* Number of lines in the lower panel (specificaitons) */
     local nylabs -1
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
-        encode `v', gen(`v'_encoded)
+        encode `v', gen(`v'_encoded) label(`v'_label)
         su `v'_encoded, meanonly
         forval i=1/`r(max)' {
           local ++nylabs
@@ -65,6 +67,11 @@ program specurve
     local offset 2
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
         su `v'_encoded, meanonly
+        forval i=1/`r(max)' {
+            local lab`i' : label `v'_label `i' 
+            local pos = `ymin' - (`offset'+`i') * `ysteplowerpanel'
+            local speclabs `speclabs' `pos' "`lab`i''"
+        }
         qui: replace `v'_encoded = `ymin' - (`offset'+`v'_encoded) * `ysteplowerpanel'
         local offset = `offset' + `r(max)'
     }
@@ -76,12 +83,12 @@ program specurve
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
 	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
-        (scatter lhs_encoded rank, msize(vsmall)) ///
-        (scatter focal_encoded rank, msize(vsmall)) ///
-        (scatter rhs_excl_focal_encoded rank, msize(vsmall)) ///
-        (scatter fe_encoded rank, msize(vsmall)) ///
-        (scatter secluster_encoded rank, msize(vsmall)) ///
-        (scatter cond_encoded rank, msize(vsmall)) ///
+        (scatter lhs_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
+        (scatter focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
+        (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
+        (scatter fe_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
+        (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
+        (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol')) ///
       , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
 	    pos(12) ring(1) rows(1) size(small) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///
@@ -90,6 +97,7 @@ program specurve
       xlab(minmax, noticks labsize(small))  /// 
       ylab(`ymin'(`ystep')`ymax', angle(0) nogrid labsize(small)) ///
       ylab(`benchmark' "`benchmark'", add custom angle(0) nogrid notick labsize(small) labcolor(cranberry)) ///
+      ylab(`speclabs', add custom angle(0) nogrid notick labsize(tiny)) ///
       graphregion(fcolor(white) lcolor(white)) ///
       plotregion(fcolor(white) lcolor(white)) ///
       name("`specurve_plot'",replace) 
