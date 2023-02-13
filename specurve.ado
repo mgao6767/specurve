@@ -8,9 +8,10 @@ set matastrict on
 capture program drop specurve
 
 program specurve
+  version 16.0
   syntax using/ [, OUTput DESCending Benchmark(real 0) /// 
     relativesize(real 0.6) ///
-    scale(real 1) ///
+    scale(real 1) Width(real 6) Height(real 8) ///
     saving(passthru) ///
     title(passthru) ///
     name(passthru) ///
@@ -103,7 +104,7 @@ program specurve
         (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(secluster_encoded)) ///
         (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(cond_encoded)) ///
       , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
-	    pos(12) ring(1) rows(1) size(small) symysize(small) symxsize(small)) ///
+	    pos(12) ring(1) rows(1) size(vsmall) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///
       yline(`benchmark') ///
       yscale() xscale() ///
@@ -115,6 +116,7 @@ program specurve
       graphregion(fcolor(white) lcolor(white)) ///
       plotregion(fcolor(white) lcolor(white)) ///
       scale(`scale') ///
+      xsize(`width') ysize(`height') ///
       `saving' `title' `name'
   }
 
