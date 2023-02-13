@@ -1,55 +1,39 @@
 # specurve
- 
-`specurve` is a Stata command used to perform Specification Curve Analysis and generate the Specification Curve plot.
 
-## Reference
-
-Please consider citing the following paper for which this Stata command is developed.
-
-> Gao, M., Leung, H., & Qiu, B. (2021). Organization capital and executive performance incentives. *Journal of Banking & Finance*, 123, 106017.
-## Dependencies
-
-`specurve` depends on Stata 16's Python integration and requires a Python version of 3.6 or above.
-
-Python modules required:
-
-* [`pandas`](https://pandas.pydata.org/): for basic dataset manipulation.
-* [`pyyaml`](https://pyyaml.org/): for reading and parsing the YAML-formatted configuration file.
-* [`plotly`](https://plotly.com/python/): for generating the specification curve plot.
-* [`kaleido`](https://github.com/plotly/Kaleido): for static image export with `plotly`.
-
-To install the required modules, try:
-
-```
-pip install pandas pyyaml plotly kaleido
-```
+`specurve` is a Stata command for Specification Curve Analysis.
 
 ## Installation
 
-Download `specurve.ado` and `specurve.hlp` and put them in your personal ado folder. To find the path to your personal ado folder, type `adopath` in Stata.
+Run the following command in Stata:
 
-## Example usage
+```Stata
+net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/master")
+```
 
-The associated help file contains a step-by-step guide on using `specurve`. To open the help file, type `help specurve` in Stata after installation.
+## Example usage & output
 
-## Example output
+```stata
+. use http://www.stata-press.com/data/r13/nlswork.dta, clear
+. copy https://mingze-gao.com/specurve/example_config_nlswork_1.yml ., replace
+. specurve using example_config_nlswork_1.yml
+```
 
 ![example1](https://github.com/mgao6767/specurve/raw/main/images/example1.png)
 
-![example2](https://github.com/mgao6767/specurve/raw/main/images/example2.png)
-
-## Alternative themes
-
-**Simple White**
-![simple_white](https://github.com/mgao6767/specurve/raw/main/images/theme-simple-white.png)
-
-**Dark**
-![simple_white](https://github.com/mgao6767/specurve/raw/main/images/theme-dark.png)
-
-Check the Stata help file for more theme options and making transparent background.
+Check `help specurve` in Stata for a step-by-step guide.
 
 ## Troubleshooting
 
 * **When following the help file, Stata reports error "file example_config_nlswork_1.yml could not be opened".**
 
 This is mostly due to permission error. Stata does not have write permission to the current working directory so it cannot download the example configuration file. You can solve it by changing the working directory to somewhere else.
+
+## Note
+
+This Stata command was originally developed when writing my first paper, Gao, M., Leung, H., & Qiu, B. (2021) "Organization capital and executive performance incentives" at the *Journal of Banking & Finance*.
+
+The [earlier version](https://github.com/mgao6767/specurve/tree/python) depends on Stata 16's Python integration and a range of external Python packages, which has caused many compatibility issues. 
+
+The current version has removed Python dependency and implements everything from parsing configuration file, composing specifications, estimating models, to plotting specification curve in Stata Mata.
+
+If there's any issue (likely), please contact me at [mingze.gao@sydney.edu.au](mailto:mingze.gao@sydney.edu.au)
