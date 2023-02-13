@@ -6,16 +6,28 @@
 
 Run the following command in Stata:
 
-```Stata
-net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/master")
+```stata
+net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/master") replace
 ```
 
 ## Example usage & output
 
 ```stata
-. use http://www.stata-press.com/data/r13/nlswork.dta, clear
-. copy https://mingze-gao.com/specurve/example_config_nlswork_1.yml ., replace
-. specurve using example_config_nlswork_1.yml
+. use "http://www.stata-press.com/data/r13/nlswork.dta", clear
+(National Longitudinal Survey.  Young Women 14-26 years of age in 1968)
+
+. copy "https://mingze-gao.com/specurve/example_config_nlswork_1.yml" ., replace
+
+. specurve using example_config_nlswork_1.yml, width(2) height(2.5) relativesize(0.5) saving(specurve_demo)
+[specurve] 22:11:02 - 40 total specifications to estimate.
+[specurve] 22:11:02 - Estimating model 1 of 40
+  ...
+[specurve] 22:11:04 - Estimating model 40 of 40
+[specurve] 22:11:04 - 37 out of 40 models have point estimates significant at 1% level.
+[specurve] 22:11:04 - 40 out of 40 models have point estimates significant at 5% level.
+[specurve] 22:11:04 - Plotting specification curve...
+(file specurve_demo.gph saved)
+[specurve] 22:11:04 - Completed.
 ```
 
 ![example1](https://github.com/mgao6767/specurve/raw/main/images/example1.png)
