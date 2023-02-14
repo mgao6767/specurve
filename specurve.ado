@@ -9,22 +9,26 @@ capture program drop specurve
 
 program specurve
   version 16.0
-  syntax using/ [, OUTput DESCending Benchmark(real 0) /// 
+  syntax using/ [, OUTput outcmd DESCending Benchmark(real 0) /// 
     relativesize(real 0.6) ///
     scale(real 1) Width(real 6) Height(real 8) ///
     saving(passthru) ///
     title(passthru) ///
     name(passthru) ///
+    ROUNDing(real 0.001) ///
+    cmd(name) ///
     ]
 
   local nooutput = "`output'" != "output"
+  local nooutcmd = "`outcmd'" != "outcmd"
   local descending = "`descending'" == "descending"
   local specmsize vsmall
   local specmsymbol o
+  if (strlen("`cmd'")==0) local cmd "reghdfe"
 
   mata: main("`using'", `nooutput')
 
-  frame specurve_res {
+  frame specurve {
     /* Number of lines in the lower panel (specificaitons) */
     local nylabs -1
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
@@ -67,9 +71,9 @@ program specurve
     else local maxub `r(max)'
     local range = `maxub' - `minlb'
     local rangelg = `range' / 0.95 // increase range a bit
-    local ymin = round(`minlb' - (`rangelg'-`range')/2, 0.001) // no rounding?
-    local ymax = round(`maxub' + (`rangelg'-`range')/2, 0.001)
-    local ystep = round((`ymax'-`ymin')/4, 0.001) 
+    local ymin = round(`minlb' - (`rangelg'-`range')/2, `rounding') // no rounding?
+    local ymax = round(`maxub' + (`rangelg'-`range')/2, `rounding')
+    local ystep = round((`ymax'-`ymin')/4, `rounding') 
     // We want the upper panel coeffs to span about `relativesize' of the area
     // the lower panel specifications about (1-`relativesize') of the area
     // `nylabs' lines in the lower panel that should span 0.3*(ymax-ymin)
@@ -118,6 +122,9 @@ program specurve
       scale(`scale') ///
       xsize(`width') ysize(`height') ///
       `saving' `title' `name'
+
+    /* clean up */
+    drop *_encoded
   }
 
   di "[specurve] `c(current_time)' - Completed."
@@ -181,8 +188,8 @@ void estimate(pointer(struct specification vector) scalar specs,
   printf("[specurve] %s - %g total specifications to estimate.\n", 
            c("current_time"), totalspecs)
   /* Stata frame to store results */
-  stata("cap frame drop specurve_res")
-  stata("mkf specurve_res double(beta lb95 ub95 lb99 ub99) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd)")
+  stata("cap frame drop specurve")
+  stata("mkf specurve double(beta lb95 ub95 lb99 ub99) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd)")
   for (i=1; i<=totalspecs; i++) {
     printf("[specurve] %s - Estimating model %g of %g\n", 
            c("current_time"), i, totalspecs)
@@ -194,19 +201,40 @@ void estimate(pointer(struct specification vector) scalar specs,
                   spec.rhs_excl_focal)
     /* conditions */
     if (strlen(spec.condition))
-      cmd = sprintf("%s if (%s)", cmd, spec.condition)
+      cmd = sprintf("%s if (%s),", cmd, spec.condition)
+    else
+      cmd = sprintf("%s,", cmd)
     /* fixed effects */
     if (strlen(spec.fixed_effects))
-      cmd = sprintf("%s, absorb(%s)", cmd, spec.fixed_effects)
-    else
-      cmd = sprintf("%s, noa", cmd)
+      cmd = sprintf("%s absorb(%s)", cmd, spec.fixed_effects)
+    else {
+      if (spec.stata_cmd == "reghdfe") {
+        cmd = sprintf("%s noa", cmd)
+      } else if (spec.stata_cmd == "ivreghdfe") {
+        cmd = sprintf("%s ", cmd)
+      }
+    }
     /* standard error clustering */
-    if (strlen(spec.standard_error_clustering))
-      cmd = sprintf("%s vce(cluster %s)", cmd, spec.standard_error_clustering)
+    if (strlen(spec.standard_error_clustering)) {
+      if (spec.stata_cmd == "reghdfe") {
+        cmd = sprintf("%s vce(cluster %s)", cmd, spec.standard_error_clustering)
+      } else if (spec.stata_cmd == "ivreghdfe") {
+        cmd = sprintf("%s cluster(%s)", cmd, spec.standard_error_clustering)
+      }
+    }
     /* execute the Stata command */
+    if (strlen(st_local("outcmd"))) printf("%s\n", cmd)
     stata(cmd, nooutput)
     /* results */
-    /* real scalar _b_focal_var = st_matrix("e(b)")[1] */
+    string scalar fvar
+    if (spec.stata_cmd == "reghdfe") {
+        fvar = spec.focal_var
+    } else if (spec.stata_cmd == "ivreghdfe") {
+        /* spec.focal_var is like "(fvar=iv)" */
+        fvar = substr(spec.focal_var, 2, strpos(spec.focal_var, "=")-2)
+        stata(sprintf("local est = _b[%s]", fvar))
+    }
+    spec.focal_var = fvar /* Maybe not to overwrite? */
     stata(sprintf("local est = _b[%s]", spec.focal_var))
     stata(sprintf("local lb95 = _b[%s] - invttail(e(df_r),0.025)*_se[%s]", 
                   spec.focal_var, spec.focal_var))
@@ -218,7 +246,7 @@ void estimate(pointer(struct specification vector) scalar specs,
                   spec.focal_var, spec.focal_var))
     string scalar framepost, model_id
     model_id = sprintf("model %g", i)
-    framepost = "frame post specurve_res "
+    framepost = "frame post specurve "
     framepost = sprintf("%s (%s) ", framepost, st_local("est"))
     framepost = sprintf("%s (%s) ", framepost, st_local("lb95"))
     framepost = sprintf("%s (%s) ", framepost, st_local("ub95"))
@@ -295,7 +323,7 @@ struct specification vector compose_all_specifications(
 
   struct specification scalar spec
   struct specification vector specs
-  spec.stata_cmd = "reghdfe"
+  spec.stata_cmd = st_local("cmd")
   specs = J(numspecs, 1, spec)
 
   cartesian_prod(1, groupvec, &specs, 1, "")
@@ -332,6 +360,7 @@ void make_specification(pointer(struct specification scalar) scalar spec,
                         string scalar groupname, string scalar label,
                         string scalar configvar) {
   if (strpos(strlower(groupname), "focal variable")) {
+    /* handle iv specification (var=iv) */
     (*spec).focal_var = configvar
     (*spec).label_focal_var = label
   }

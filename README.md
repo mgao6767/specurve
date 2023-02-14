@@ -12,46 +12,67 @@ net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/
 
 ## Example usage & output
 
+### Regressions with `reghdfe`
+
 ```stata
 . use "http://www.stata-press.com/data/r13/nlswork.dta", clear
 (National Longitudinal Survey.  Young Women 14-26 years of age in 1968)
 
-. copy "https://mingze-gao.com/specurve/example_config_nlswork_1.yml" ., replace
+. copy "https://mingze-gao.com/specurve/example_config_nlswork_reghdfe.yml" ., replace
 
-. specurve using example_config_nlswork_1.yml, width(2) height(2.5) relativesize(0.5) saving(specurve_demo)
-[specurve] 22:11:02 - 40 total specifications to estimate.
-[specurve] 22:11:02 - Estimating model 1 of 40
+. specurve using example_config_nlswork_reghdfe.yml, saving(specurve_demo)
+[specurve] 11:33:54 - 72 total specifications to estimate.
+[specurve] 11:33:54 - Estimating model 1 of 72
   ...
-[specurve] 22:11:04 - Estimating model 40 of 40
-[specurve] 22:11:04 - 37 out of 40 models have point estimates significant at 1% level.
-[specurve] 22:11:04 - 40 out of 40 models have point estimates significant at 5% level.
-[specurve] 22:11:04 - Plotting specification curve...
+[specurve] 11:34:00 - Estimating model 72 of 72
+[specurve] 11:34:00 - 69 out of 72 models have point estimates significant at 1% level.
+[specurve] 11:34:00 - 72 out of 72 models have point estimates significant at 5% level.
+[specurve] 11:34:00 - Plotting specification curve...
 (file specurve_demo.gph saved)
-[specurve] 22:11:04 - Completed.
+[specurve] 11:34:01 - Completed.
 ```
 
-![example1](https://github.com/mgao6767/specurve/raw/main/images/example1.png)
+![example_reghdfe](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe.png)
+
+### IV regressions with `ivreghdfe`
+
+```stata
+. copy "https://mingze-gao.com/specurve/example_config_nlswork_ivreghdfe.yml" ., replace
+. specurve using example_config_nlswork_ivreghdfe.yml, cmd(ivreghdfe) rounding(0.01) title("IV regression with ivreghdfe")
+```
+
+![example_ivreghdfe](https://github.com/mgao6767/specurve/raw/main/images/example_ivreghdfe.png)
 
 Check `help specurve` in Stata for a step-by-step guide.
 
+### Post estimation
+
+Estimation results are saved in the [frame](https://www.stata.com/manuals/dframesintro.pdf) named "specurve".
+
+Use `frame change specurve` to check the results.
+
+Use `frame change default` to switch back to the original dataset.
+
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(real) **h**eight(real) realativesize(real) scale(real) title(string) saving(name) name(string) **desc**ending **out**put **b**enchmark(real)]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) cmd(_name_)]
 
 ### Options
 
-| options            | Description                                                                      |
-| ------------------ | -------------------------------------------------------------------------------- |
-| **w**idth(real)    | set width of the specification curve plot.                                       |
-| **h**eight(real)   | set height of the specification curve plot.                                      |
-| relativesize(real) | set the size of coefficients panel relative to the entire plot. Defaults to 0.6. |
-| scale(real)        | resize text, markers, and line widths.                                           |
-| title(string)      | set graph title.                                                                 |
-| saving(name)       | save graph as name.                                                              |
-| name(string)       | set graph title as string.                                                       |
-| **desc**ending     | plot coefficients in descending order.                                           |
-| **out**put         | display all regression outputs.                                                  |
-| **b**enchmark      | set the benchmark level. Defaults to 0.                                          |
+| options              | Description                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------- |
+| **w**idth(_real_)    | set width of the specification curve plot.                                                               |
+| **h**eight(_real_)   | set height of the specification curve plot.                                                              |
+| relativesize(_real_) | set the size of coefficients panel relative to the entire plot. Defaults to 0.6.                         |
+| scale(_real_)        | resize text, markers, and line widths.                                                                   |
+| title(_string_)      | set graph title.                                                                                         |
+| saving(name)         | save graph as name.                                                                                      |
+| name(_string_)       | set graph title as string.                                                                               |
+| **desc**ending       | plot coefficients in descending order.                                                                   |
+| outcmd               | display the full regression command.                                                                     |
+| **out**put           | display all regression outputs.                                                                          |
+| **b**enchmark        | set the benchmark level. Defaults to 0.                                                                  |
+| cmd(_name_)          | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
 
 ## Troubleshooting
 

@@ -5,8 +5,8 @@
 {cmd:specurve} performs {browse "https://mingze-gao.com/posts/specification-curve-analysis/":specification curve analysis} as specified by the YAML-formatted {it:filename} and plot the specification curve.
 {viewerjumpto "Syntax" "specurve##syntax"}{...}
 {viewerjumpto "Options" "specurve##options"}{...}
-{viewerjumpto "Configuration file" "specurve##configuration"}{...}
 {viewerjumpto "Examples" "specurve##examples"}{...}
+{viewerjumpto "Configuration file" "specurve##configuration"}{...}
 {viewerjumpto "Thanks" "specurve##thanks"}{...}
 {viewerjumpto "Author" "specurve##author"}{...}
 
@@ -14,7 +14,8 @@
 
 {title:Syntax}
 
-{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt realativesize(real)} {opt scale(real)} {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt out:put} {opt b:enchmark(real)}]
+{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt realativesize(real)} {opt scale(real)}
+    {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} {opt b:enchmark(real)} {opt round:ing(real)} {opt cmd(name)}]
 
 {marker Options}{...}
 
@@ -31,9 +32,48 @@
 {synopt:{opt saving(name)}} save graph as {it:name}.{p_end}
 {synopt:{opt name(string)}} set graph title as {it:string}.{p_end}
 {synopt:{opt desc:ending}} plot coefficients in descending order.{p_end}
+{synopt:{opt outcmd}} display the full regression command.{p_end}
 {synopt:{opt out:put}} display all regression outputs.{p_end}
 {synopt:{opt b:enchmark}} set the benchmark level. Defaults to 0.{p_end}
+{synopt:{opt round:ing(real)}} set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.{p_end}
+{synopt:{opt cmd(name)}} set the command used to estimate models. Defaults to {cmd:reghdfe}. Can be one of {cmd:reghdfe} and {cmd:ivreghdfe}.{p_end}
 {synoptline}
+
+{marker examples}{...}
+
+{title:Examples}
+
+{pstd}Use the National Longitudinal Survey (Young Women 14-26 years of age in 1968) as an example.
+
+{phang2}{stata "use http://www.stata-press.com/data/r13/nlswork.dta, clear"}
+
+{pstd}Download an example YAML-formatted configuration file:
+
+{phang2}{stata "copy https://mingze-gao.com/specurve/example_config_nlswork_reghdfe.yml ., replace"}
+
+{pstd}Run {cmd:specurve} using the downloaded configuration file and make a specification curve plot with default options.
+
+{phang2}{stata specurve using example_config_nlswork_reghdfe.yml}
+ 
+{pstd}We can also add options:
+
+{phang2}{stata specurve using example_config_nlswork_reghdfe.yml, desc outcmd width(2) height(2.5) relativesize(0.5) saving(specurve_demo, replace)}
+
+{pstd}For IV regression, we can set the option {opt cmd} to {cmd: ivreghdfe}. As an example, download the example configuration file for IV regression:
+
+{phang2}{stata "copy https://mingze-gao.com/specurve/example_config_nlswork_ivreghdfe.yml ., replace"}
+
+{phang2}{stata specurve using example_config_nlswork_ivreghdfe.yml, cmd(ivreghdfe) rounding(0.01) title("IV regression with ivreghdfe")}
+
+{pstd}Lastly, to remove the downloaded example configuration files, run the following commands:
+
+{phang2}{stata rm example_config_nlswork_reghdfe.yml}
+
+{phang2}{stata rm example_config_nlswork_ivreghdfe.yml}
+
+{pstd}Note that estimation results are saved in the frame named "specurve".
+
+{hline}
 
 {marker Configuration}{...}
 
@@ -83,43 +123,6 @@ For example:
             - Full Sample: 1993 <= fyear & fyear <= 2020
             - Excluding GFC: (1993 <= fyear & fyear <= 2006) | fyear >= 2009
 
-
-{hline}
-{marker examples}{...}
-
-{title:Examples}
-
-
-{pstd}Use the National Longitudinal Survey (Young Women 14-26 years of age in 1968) as an example.
-
-{phang2}{stata "use http://www.stata-press.com/data/r13/nlswork.dta, clear"}
-
-{pstd}Download an example YAML-formatted configuration file:
-
-{phang2}{stata "copy https://mingze-gao.com/specurve/example_config_nlswork_1.yml ., replace"}
-
-{pstd}Run {cmd:specurve} using the downloaded configuration file and make a specification curve plot with default options.
-
-{phang2}{stata specurve using example_config_nlswork_1.yml}
- 
-{pstd}Next, let's try two dependent variables. For illustration, we create a {bf:wage} variable by exponentiating {bf:ln_wage}:
-
-{phang2}{stata gen wage = exp(ln_wage)}
-
-{pstd}Then download and use the second example configuration file:
-
-{phang2}{stata "copy https://mingze-gao.com/specurve/example_config_nlswork_2.yml ., replace"}
-
-{phang2}{stata specurve using example_config_nlswork_2.yml, desc width(10) height(13) scale(0.95) relativesize(0.4)}
-
-{pstd}Note here, we changed the width of the plot and modified the (left) spacing between the annotation and plot margin.
-
-{pstd}Lastly, to remove the downloaded example configuration files, run the following commands:
-
-{phang2}{stata rm example_config_nlswork_1.yml}
-
-{phang2}{stata rm example_config_nlswork_2.yml}
-
 {hline}
 
 {marker thanks}{...}
@@ -130,6 +133,8 @@ Uri Simonsohn, Joseph Simmons and Leif D. Nelson for their paper "Specification 
 Rawley Heimer from Boston College who visited our discipline in 2019 and introduced the Specification Curve Analysis to us in the seminar on research methods.
 
 Martin Andresen from University of Oslo who made the {browse "https://github.com/martin-andresen/speccurve":{cmd:speccurve}} open-sourced on GitHub.
+
+Hans Sievertsen from University of Bristol who wrote a {browse "https://github.com/hhsievertsen/speccurve":specurve demo}.
 
 {marker author}{...}
 {title:Author}
