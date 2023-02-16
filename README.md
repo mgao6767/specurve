@@ -12,24 +12,32 @@ net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/
 
 ## Example usage & output
 
-### Regressions with `reghdfe`
+### Setup
 
 ```stata
 . use "http://www.stata-press.com/data/r13/nlswork.dta", clear
-(National Longitudinal Survey.  Young Women 14-26 years of age in 1968)
-
 . copy "https://mingze-gao.com/specurve/example_config_nlswork_reghdfe.yml" ., replace
+```
 
+### Regressions with `reghdfe`
+
+```stata
 . specurve using example_config_nlswork_reghdfe.yml, saving(specurve_demo)
-[specurve] 11:33:54 - 72 total specifications to estimate.
-[specurve] 11:33:54 - Estimating model 1 of 72
+```
+
+The output is
+
+```stata
+[specurve] 10:18:11 - 72 total specifications to estimate.
+[specurve] 10:18:11 - Estimating model 1 of 72
   ...
-[specurve] 11:34:00 - Estimating model 72 of 72
-[specurve] 11:34:00 - 69 out of 72 models have point estimates significant at 1% level.
-[specurve] 11:34:00 - 72 out of 72 models have point estimates significant at 5% level.
-[specurve] 11:34:00 - Plotting specification curve...
+[specurve] 10:18:17 - Estimating model 72 of 72
+[specurve] 10:18:18 - 69 out of 72 models have point estimates significant at 1% level.
+[specurve] 10:18:18 - 72 out of 72 models have point estimates significant at 5% level.
+[specurve] 10:18:18 - Results saved in frame. Use frame change specurve to check. frame change default to restore.
+[specurve] 10:18:18 - Plotting specification curve...
 (file specurve_demo.gph saved)
-[specurve] 11:34:01 - Completed.
+[specurve] 10:18:19 - Completed.
 ```
 
 ![example_reghdfe](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe.png)

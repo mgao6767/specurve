@@ -40,8 +40,20 @@ program specurve
     if (`descending') gsort -beta
     else gsort beta
     gen rank = _n
-    su beta, meanonly
+    qui: su beta, detail
     local beta_obs1 = `r(min)'
+    local beta_median = `r(p50)'
+    /* Stouffer's Z */
+    gen z = -invnormal(pval/2)
+    gen w = 1/sqrt(_N) // weight is square root of number of tests
+    egen sumw = sum(w)
+    egen sumzw = sum(z*w)
+    gen z_stouffer = sumzw / sumw
+    drop z w sumw sumzw
+    su z_stouffer, meanonly
+    local z_stouffer = `r(mean)'
+    drop z_stouffer // TODO: this test is not consistent with Simonsohn, Simmons, and Nelson (2020) yet
+    
     gen sig95 = (`benchmark' < lb95)  | (`benchmark' > ub95)
     gen sig99 = (`benchmark' < lb99)  | (`benchmark' > ub99)
     qui: count
@@ -52,6 +64,9 @@ program specurve
     local nsig95 = r(N)
     di "[specurve] `c(current_time)' - `nsig99' out of `c(N)' models have point estimates significant at 1% level."
     di "[specurve] `c(current_time)' - `nsig95' out of `c(N)' models have point estimates significant at 5% level."
+    /* di "[specurve] `c(current_time)' - Median effect estimated across all specification is `beta_median'" */
+    /* di "[specurve] `c(current_time)' - Stouffer's Z is `z_stouffer'" */
+    /* di "[specurve] `c(current_time)' - Results saved in frame. Use {stata frame change specurve} to check. {stata frame change default} to restore." */
 
     /* Plotting */
     label var lhs "Dependent variable"
@@ -189,7 +204,7 @@ void estimate(pointer(struct specification vector) scalar specs,
            c("current_time"), totalspecs)
   /* Stata frame to store results */
   stata("cap frame drop specurve")
-  stata("mkf specurve double(beta lb95 ub95 lb99 ub99) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd)")
+  stata("mkf specurve double(beta lb95 ub95 lb99 ub99 pval) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd)")
   for (i=1; i<=totalspecs; i++) {
     printf("[specurve] %s - Estimating model %g of %g\n", 
            c("current_time"), i, totalspecs)
@@ -244,6 +259,8 @@ void estimate(pointer(struct specification vector) scalar specs,
                   spec.focal_var, spec.focal_var))
     stata(sprintf("local ub99 = _b[%s] + invttail(e(df_r),0.005)*_se[%s]", 
                   spec.focal_var, spec.focal_var))
+    stata(sprintf("local pval = 2*ttail(e(df_r), abs(_b[%s]/_se[%s]))",
+                  spec.focal_var, spec.focal_var))
     string scalar framepost, model_id
     model_id = sprintf("model %g", i)
     framepost = "frame post specurve "
@@ -252,6 +269,7 @@ void estimate(pointer(struct specification vector) scalar specs,
     framepost = sprintf("%s (%s) ", framepost, st_local("ub95"))
     framepost = sprintf("%s (%s) ", framepost, st_local("lb99"))
     framepost = sprintf("%s (%s) ", framepost, st_local("ub99"))
+    framepost = sprintf("%s (%s) ", framepost, st_local("pval"))
     framepost = sprintf("%s (%g) ", framepost, st_numscalar("e(N)"))
     framepost = sprintf("%s (%s) ", framepost, _wrap(model_id))
     framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_lhs))
