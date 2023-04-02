@@ -17,16 +17,18 @@ program specurve
     name(passthru) ///
     ROUNDing(real 0.001) ///
     cmd(name) ///
+    KEEPSINgletons ///
     ]
 
   local nooutput = "`output'" != "output"
   local nooutcmd = "`outcmd'" != "outcmd"
   local descending = "`descending'" == "descending"
+  local keepsingletons = "`keepsingletons'" == "keepsingletons"
   local specmsize vsmall
   local specmsymbol o
   if (strlen("`cmd'")==0) local cmd "reghdfe"
 
-  mata: main("`using'", `nooutput')
+  mata: main("`using'", `nooutput', `keepsingletons')
 
   frame specurve {
     /* Number of lines in the lower panel (specificaitons) */
@@ -182,7 +184,7 @@ struct group {
   real scalar nlabels
 }
 
-void main(string scalar filename, real scalar nooutput) {
+void main(string scalar filename, real scalar nooutput, real scalar keepsingletons) {
   struct config scalar config
   struct config vector choices, conditions
   struct specification vector specs
@@ -191,11 +193,12 @@ void main(string scalar filename, real scalar nooutput) {
   /* procedures */
   read_configuration(filename, &choices, &conditions)
   specs = compose_all_specifications(choices, conditions)
-  estimate(&specs, nooutput)
+  estimate(&specs, nooutput, keepsingletons)
 }
 
 void estimate(pointer(struct specification vector) scalar specs,
-              real scalar nooutput) {
+              real scalar nooutput,
+              real scalar keepsingletons) {
   real scalar i, totalspecs
   string scalar cmd
   struct specification scalar spec
@@ -235,6 +238,12 @@ void estimate(pointer(struct specification vector) scalar specs,
         cmd = sprintf("%s vce(cluster %s)", cmd, spec.standard_error_clustering)
       } else if (spec.stata_cmd == "ivreghdfe") {
         cmd = sprintf("%s cluster(%s)", cmd, spec.standard_error_clustering)
+      }
+    }
+    /* reghdfe options */
+    if (spec.stata_cmd == "reghdfe") {
+      if (keepsingletons) {
+        cmd = sprintf("%s keepsingletons", cmd)
       }
     }
     /* execute the Stata command */

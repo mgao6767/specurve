@@ -15,7 +15,7 @@
 {title:Syntax}
 
 {cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt realativesize(real)} {opt scale(real)}
-    {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} {opt b:enchmark(real)} {opt round:ing(real)} {opt cmd(name)}]
+    {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} {opt b:enchmark(real)} {opt round:ing(real)} {opt cmd(name)} {opt keepsin:gletons}]
 
 {marker Options}{...}
 
@@ -37,6 +37,7 @@
 {synopt:{opt b:enchmark}} set the benchmark level. Defaults to 0.{p_end}
 {synopt:{opt round:ing(real)}} set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.{p_end}
 {synopt:{opt cmd(name)}} set the command used to estimate models. Defaults to {cmd:reghdfe}. Can be one of {cmd:reghdfe} and {cmd:ivreghdfe}.{p_end}
+{synopt:{opt keepsin:gletons}} keep singleton groups. Only useful when using {cmd:reghdfe}.{p_end}
 {synoptline}
 
 {marker examples}{...}
