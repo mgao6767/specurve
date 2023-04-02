@@ -63,7 +63,7 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) cmd(_name_)]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) cmd(_name_) **keepsin**gletons]
 
 ### Options
 
@@ -81,6 +81,7 @@ Use `frame change default` to switch back to the original dataset.
 | **out**put           | display all regression outputs.                                                                          |
 | **b**enchmark        | set the benchmark level. Defaults to 0.                                                                  |
 | cmd(_name_)          | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
+| **keepsin**gletons   | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
 ## Troubleshooting
 
