@@ -83,6 +83,17 @@ Use `frame change default` to switch back to the original dataset.
 | cmd(_name_)          | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
 | **keepsin**gletons   | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
+## Update log
+
+2023-04-03:
+
+- Preserve the order of choices in each group as specified in the configuration file.
+- Allow no conditions specified in the configuration file.
+
+2023-04-02: 
+
+- Allow `keepsingletons` option for `reghdfe`.
+
 ## Troubleshooting
 
 * **When following the help file, Stata reports error "file example_config_nlswork_1.yml could not be opened".**
