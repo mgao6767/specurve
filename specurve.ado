@@ -36,7 +36,10 @@ program specurve
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
         encode `v', gen(`v'_encoded) label(`v'_label)
         su `v'_encoded, meanonly
-        local nylabs = `nylabs' + `r(max)' + 1
+        /* conditions may be missing so that r(max) is undefined */
+        if (!missing("`r(max)'")) {
+          local nylabs = `nylabs' + `r(max)' + 1
+        }
     }
 
     if (`descending') gsort -beta
@@ -100,6 +103,8 @@ program specurve
     local offset 2
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
         su `v'_encoded, meanonly
+        /* No condition specified leads to cond_encoded all missing */
+        if (missing("`r(max)'")) continue
         local pos = `ymin' - (`offset') * `ysteplowerpanel'
         local labv: variable label `v' 
         local speclabs1 `speclabs1' `pos' "{bf:`labv'}"
