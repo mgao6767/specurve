@@ -34,11 +34,13 @@ program specurve
     /* Number of lines in the lower panel (specificaitons) */
     local nylabs -1
     foreach v in lhs focal rhs_excl_focal fe secluster cond {
-        encode `v', gen(`v'_encoded) label(`v'_label)
+        /* encode `v', gen(`v'_encoded) label(`v'_label) */
+        gen `v'_encoded = real(id`v')
+        label values `v'_encode labchoices
         su `v'_encoded, meanonly
         /* conditions may be missing so that r(max) is undefined */
         if (!missing("`r(max)'")) {
-          local nylabs = `nylabs' + `r(max)' + 1
+          local nylabs = `nylabs' + `r(max)' - `r(min)' + 2
         }
     }
 
@@ -108,13 +110,14 @@ program specurve
         local pos = `ymin' - (`offset') * `ysteplowerpanel'
         local labv: variable label `v' 
         local speclabs1 `speclabs1' `pos' "{bf:`labv'}"
-        forval i=1/`r(max)' {
-            local lab`i' : label `v'_label `i' 
-            local pos = `ymin' - (`offset'+`i') * `ysteplowerpanel'
+        forval i=`r(min)'/`r(max)' {
+            /* local lab`i' : label `v'_label `i'  */
+            local lab`i' : label labchoices `i' 
+            local pos = `ymin' - (`offset'+`i'-`r(min)'+1) * `ysteplowerpanel'
             local speclabs `speclabs' `pos' "`lab`i''"
         }
-        qui: replace `v'_encoded = `ymin' - (`offset'+`v'_encoded) * `ysteplowerpanel'
-        local offset = `offset' + `r(max)' + 1
+        qui: replace `v'_encoded = `ymin' - (`offset'+`v'_encoded-`r(min)'+1) * `ysteplowerpanel'
+        local offset = `offset' + `r(max)'-`r(min)' + 2
     }
 
     di "[specurve] `c(current_time)' - Plotting specification curve..."
@@ -123,12 +126,12 @@ program specurve
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
 	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
-        (scatter lhs_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(lhs_encoded)) /// sort() preserves the order in config file
-        (scatter focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(focal_encoded)) ///
-        (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(rhs_excl_focal_encoded)) ///
-        (scatter fe_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(fe_encoded)) ///
-        (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(secluster_encoded)) ///
-        (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol') sort(cond_encoded)) ///
+        (scatter lhs_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  /// 
+        (scatter focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter fe_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
       , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
 	    pos(12) ring(1) rows(1) size(vsmall) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///
@@ -146,7 +149,7 @@ program specurve
       `saving' `title' `name'
 
     /* clean up */
-    drop *_encoded
+    drop *_encoded id*
   }
 
   di "[specurve] `c(current_time)' - Completed."
@@ -169,6 +172,13 @@ struct specification {
   string scalar label_condition
   string scalar label_fixed_effects
   string scalar label_standard_error_clustering
+  /* label id for preserving orders */
+  string scalar label_lhs_id
+  string scalar label_focal_var_id
+  string scalar label_rhs_excl_focal_id
+  string scalar label_condition_id
+  string scalar label_fixed_effects_id
+  string scalar label_se_clustering_id
   /* misc */
   string scalar stata_cmd
   string scalar configstr
@@ -182,6 +192,8 @@ struct config {
   string scalar label
   /* the variable(s) for the config */
   string scalar variables
+  /* the order of the config in the group */
+  real scalar id
 }
 
 struct group {
@@ -195,9 +207,15 @@ void main(string scalar filename, real scalar nooutput, real scalar keepsingleto
   struct specification vector specs
   choices = J(200, 1, config)
   conditions = J(200, 1, config)
+  /* Stata frame to store results */
+  stata("cap frame drop specurve")
+  stata("mkf specurve double(beta lb95 ub95 lb99 ub99 pval) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd) str8(idlhs idfocal idrhs_excl_focal idfe idsecluster idcond)")
+  st_framecurrent("specurve")
+  stata(sprintf("label define labchoices 0 %s%s, replace", char(34), char(34)))
   /* procedures */
   read_configuration(filename, &choices, &conditions)
   specs = compose_all_specifications(choices, conditions)
+  st_framecurrent("default")
   estimate(&specs, nooutput, keepsingletons)
 }
 
@@ -210,9 +228,6 @@ void estimate(pointer(struct specification vector) scalar specs,
   totalspecs = length(*specs)
   printf("[specurve] %s - %g total specifications to estimate.\n", 
            c("current_time"), totalspecs)
-  /* Stata frame to store results */
-  stata("cap frame drop specurve")
-  stata("mkf specurve double(beta lb95 ub95 lb99 ub99 pval) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd)")
   for (i=1; i<=totalspecs; i++) {
     printf("[specurve] %s - Estimating model %g of %g\n", 
            c("current_time"), i, totalspecs)
@@ -292,7 +307,14 @@ void estimate(pointer(struct specification vector) scalar specs,
     framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_fixed_effects))
     framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_standard_error_clustering))
     framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_condition))
-    framepost = sprintf("%s (%s)", framepost, _wrap(cmd))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(cmd))
+    /* add label ids */
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_lhs_id))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_focal_var_id))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_rhs_excl_focal_id))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_fixed_effects_id))
+    framepost = sprintf("%s (%s) ", framepost, _wrap(spec.label_se_clustering_id))
+    framepost = sprintf("%s (%s)", framepost, _wrap(spec.label_condition_id))
     stata(framepost)
   }
 }
@@ -363,7 +385,7 @@ struct specification vector compose_all_specifications(
   /* making specifications */
   real scalar groupnum, labelnum
   string vector conftokens, conftoken
-  string scalar groupname, labelname, configvar
+  string scalar groupname, labelname, configvar, labelId
   for (k=1; k<=length(specs); k++) {
     /* specs[k].configstr is like: "1-2 2-1 3-5 4-1 5-2 6-2"
        group 1 - label 2
@@ -378,9 +400,11 @@ struct specification vector compose_all_specifications(
       groupname = groupvec[groupnum].name
       labelname = get_config(labelnum, groupname, &choices, &conditions, "lab")
       configvar = get_config(labelnum, groupname, &choices, &conditions, "var")
+      /* the order of the label in the group */
+      labelId =  get_config(labelnum, groupname, &choices, &conditions, "labId")
       /* printf("  %s %s\n", groupname, labelname) */
       /* write into the specs */
-      make_specification(&(specs[k]), groupname, labelname, configvar)
+      make_specification(&(specs[k]), groupname, labelname, configvar, labelId)
     }
 
   }
@@ -390,32 +414,40 @@ struct specification vector compose_all_specifications(
 
 void make_specification(pointer(struct specification scalar) scalar spec,
                         string scalar groupname, string scalar label,
-                        string scalar configvar) {
+                        string scalar configvar,
+                        string scalar labelId) {
   if (strpos(strlower(groupname), "focal variable")) {
     /* handle iv specification (var=iv) */
     (*spec).focal_var = configvar
     (*spec).label_focal_var = label
+    /* focal var's label id in choices */
+    (*spec).label_focal_var_id = labelId // add this field to struct specification
   }
   else if (strpos(strlower(groupname), "dependent variable")) {
     (*spec).lhs = configvar
     (*spec).label_lhs = label
+    (*spec).label_lhs_id = labelId 
   }
   else if (strpos(strlower(groupname), "control variables")) {
     (*spec).rhs_excl_focal = configvar
     (*spec).label_rhs_excl_focal = label
+    (*spec).label_rhs_excl_focal_id = labelId 
   }
   else if (strpos(strlower(groupname), "fixed effects")) {
     (*spec).fixed_effects = configvar
     (*spec).label_fixed_effects = label
+    (*spec).label_fixed_effects_id = labelId 
   }
   else if (strpos(strlower(groupname), "standard error clustering")) {
     (*spec).standard_error_clustering = configvar
     (*spec).label_standard_error_clustering = label
+    (*spec).label_se_clustering_id = labelId 
   }
   /* condition, if not one of the choices */
   else {
     (*spec).condition = configvar
     (*spec).label_condition = label
+    (*spec).label_condition_id = labelId 
   }
 }
 
@@ -431,6 +463,7 @@ string scalar get_config(real scalar id, string scalar groupname,
     if (k == id) 
       if (returnval=="lab") return((*choices)[i].label)
       else if (returnval=="var") return((*choices)[i].variables)
+      else if (returnval=="labId") return(strofreal(((*choices)[i].id)))
   }
   k = 0
   for (i=1; i<=length(*conditions); i++) {
@@ -438,6 +471,7 @@ string scalar get_config(real scalar id, string scalar groupname,
     if (k == id)
       if (returnval=="lab") return((*conditions)[i].label)
       else if (returnval=="var") return((*conditions)[i].variables)
+      else if (returnval=="labId") return(strofreal((*conditions)[i].id))
   }
   return("")
 }
@@ -504,7 +538,7 @@ void read_configuration(string scalar filename,
       if (strpos(line, "-") != 1) {
         groupname = line
       } else {
-        config = process_config_line(groupname, line)
+        config = process_config_line(groupname, line, *choices, *conditions, 1)
         numChoices = numChoices + 1
         (*choices)[numChoices] = config
       }
@@ -513,7 +547,7 @@ void read_configuration(string scalar filename,
       if (strpos(line, "-") != 1) {
         groupname = line
       } else {
-        config = process_config_line(groupname, line)
+        config = process_config_line(groupname, line, *choices, *conditions, 0)
         numConditions = numConditions + 1
         (*conditions)[numConditions] = config
       }
@@ -524,7 +558,10 @@ void read_configuration(string scalar filename,
 }
 
 struct config scalar process_config_line(string scalar group, 
-                                         string scalar line) {
+                                         string scalar line,
+                        struct config vector choices,
+                        struct config vector conditions,
+                        real scalar processChoices) {
   /* This function reads a line and return the config (group, label and vars) */
   struct config scalar config
   /* remove leading "-" which marks the line as a config alternative */
@@ -533,6 +570,52 @@ struct config scalar process_config_line(string scalar group,
   config.group = group
   config.label = substr(line, 1, strpos(line, ":")-1)
   config.variables = strtrim(substr(line, strpos(line, ":")+1, strlen(line)-1))
+  /* keep track of the order of labels in each group */
+  /* if a label is never seen, assign it id = nlabels in the group + 1 */
+  real scalar labelHasBeenUsed 
+  real scalar maxLabelId 
+  real scalar i
+  labelHasBeenUsed = 0
+  maxLabelId = 0
+  if (processChoices) {
+    for (i=1; i<=length(choices); i++) {
+      if (choices[i].label == "") break
+      if (maxLabelId<choices[i].id) maxLabelId = choices[i].id
+      if (choices[i].label == config.label && choices[i].group == config.group) {
+        labelHasBeenUsed = 1
+        config.id = choices[i].id
+        break
+      }
+    }
+  } else {
+    real scalar maxLabelChoicesId
+    maxLabelChoicesId = 0
+    for (i=1; i<=length(choices); i++) {
+      if (choices[i].label == "") break
+      if (maxLabelChoicesId<choices[i].id) maxLabelChoicesId= choices[i].id
+    }
+
+    for (i=1; i<=length(conditions); i++) {
+      if (conditions[i].label == "") break
+      if (maxLabelId<conditions[i].id) maxLabelId = conditions[i].id
+      if (conditions[i].label == config.label && conditions[i].group == config.group) {
+        labelHasBeenUsed = 1
+        config.id = conditions[i].id
+        break
+      }
+    }
+
+    if (maxLabelId <= maxLabelChoicesId) {
+      maxLabelId = maxLabelId + maxLabelChoicesId
+    }
+  }
+  if (labelHasBeenUsed == 0) {
+    config.id = maxLabelId + 1
+  }
+  string scalar lab
+  lab = sprintf("label define labchoices %s %s%s%s, modify", strofreal(config.id), char(34), config.label, char(34))
+  stata(lab)
+  
   return(config)
 }
 
