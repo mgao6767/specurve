@@ -153,6 +153,8 @@ program specurve
   }
 
   di "[specurve] `c(current_time)' - Completed."
+  di "[specurve] use {stata frame change specurve} to see results"
+  di "[specurve] use {stata frame change default} to switch back to current frame"
 end
 
 mata:
@@ -518,9 +520,13 @@ void read_configuration(string scalar filename,
   /* process line by line */
   while ( (line=fget(input_fh)) != J(0,0,"") ) {
     /* remove comments and trim line */
-    comment_pos = strpos(line, "#")
-    if (comment_pos)
+    /* this line starts with a hashtag: comment line */
+    if (strpos(strtrim(line), "#") == 1) continue
+    /* this hashtag # has a leading space, ie. it marks inline comment */
+    comment_pos = strpos(line, " #")
+    if (comment_pos) {
       line = substr(line, 1, comment_pos-1)
+    }
     line = strtrim(line)
     if (!strlen(line)) continue
     /* check if is processing CHOICES */

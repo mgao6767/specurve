@@ -1,5 +1,7 @@
 # specurve
 
+Most recent update: **2023-04-23**
+
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
 ## Installation
@@ -28,16 +30,18 @@ net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/
 The output is
 
 ```stata
-[specurve] 10:18:11 - 72 total specifications to estimate.
-[specurve] 10:18:11 - Estimating model 1 of 72
-  ...
-[specurve] 10:18:17 - Estimating model 72 of 72
-[specurve] 10:18:18 - 69 out of 72 models have point estimates significant at 1% level.
-[specurve] 10:18:18 - 72 out of 72 models have point estimates significant at 5% level.
-[specurve] 10:18:18 - Results saved in frame. Use frame change specurve to check. frame change default to restore.
-[specurve] 10:18:18 - Plotting specification curve...
-(file specurve_demo.gph saved)
-[specurve] 10:18:19 - Completed.
+[specurve] 11:43:54 - 84 total specifications to estimate.
+[specurve] 11:43:54 - Estimating model 1 of 84
+[specurve] 11:43:54 - Estimating model 2 of 84
+......
+[specurve] 11:43:57 - Estimating model 84 of 84
+[specurve] 11:43:57 - 81 out of 84 models have point estimates significant at 1% level.
+[specurve] 11:43:57 - 84 out of 84 models have point estimates significant at 5% level.
+[specurve] 11:43:57 - Plotting specification curve...
+file specurve_demo.gph saved
+[specurve] 11:43:58 - Completed.
+[specurve] use frame change specurve to see results
+[specurve] use frame change default to switch back to current frame
 ```
 
 ![example_reghdfe](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe.png)
@@ -85,14 +89,26 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Update log
 
+2023-04-22:
+
+- Fix a bug that mistakes the hashtag in Stata interactions (e.g., `var1#var2`) for inline comments.
+- Thanks to Kenneth Shores from University of Delaware for identifying the bug and suggesting solutions.
+
 2023-04-03:
 
 - Preserve the order of choices in each group as specified in the configuration file.
 - Allow no conditions specified in the configuration file.
+- Thanks to Christopher Whaley from RAND Corp for suggesting the improvement.
 
-2023-04-02: 
+2023-04-02:
 
-- Allow `keepsingletons` option for `reghdfe`.
+- Allow `keepsingletons` option for `reghdfe`. 
+- Thanks to Ken P.Y. Wang from National Taiwan University for suggesting the improvement.
+
+2023-02-13:
+
+- Remove Python dependencies.
+- Thanks to Germán Guerra from the National Institute of Public Health (Mexico), Kausik Chaudhuri from University of Leeds for numerous installation tests which ultimately lead me to rewrite `specurve` in pure Stata.
 
 ## Troubleshooting
 
