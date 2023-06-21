@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 16.0 23apr2023}{...}
+{* *! version 16.0 22jun2023}{...}
 {title:specurve - Specification Curve Analysis}{smcl}
 
 {cmd:specurve} performs {browse "https://mingze-gao.com/posts/specification-curve-analysis/":specification curve analysis} as specified by the YAML-formatted {it:filename} and plot the specification curve.

@@ -20,6 +20,19 @@ program specurve
     KEEPSINgletons ///
     ]
 
+  capture which reghdfe
+  if _rc {
+    display as result in smcl `"Please install package {it:reghdfe} from SSC in order to run this do-file;"' _newline ///
+        `"you can do so by clicking this link: {stata "ssc install reghdfe":auto-install reghdfe}"'
+    exit 199
+  }
+  capture which ivreghdfe 
+  if _rc {
+    display as result in smcl `"Please install package {it:ivreghdfe} from SSC in order to run this do-file;"' _newline ///
+        `"you can do so by clicking this link: {stata "ssc install ivreghdfe":auto-install ivreghdfe}"'
+    exit 199
+  }
+
   local nooutput = "`output'" != "output"
   local nooutcmd = "`outcmd'" != "outcmd"
   local descending = "`descending'" == "descending"
