@@ -91,8 +91,8 @@ Use `frame change default` to switch back to the original dataset.
 
 2023-06-22:
 
-- Added a dependency check for -reghdfe- and -ivreghdfe-.
-- Thanks to Brittany O'Duffy from Oxford Internet Institute at University of Oxford to identify the bug.
+- Added a dependency check for `reghdfe` and `ivreghdfe`.
+- Thanks to Brittany O'Duffy from Oxford Internet Institute at University of Oxford for identifying the bug.
 
 2023-04-22:
 
