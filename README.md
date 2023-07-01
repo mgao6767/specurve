@@ -1,10 +1,10 @@
 # specurve
 
-Most recent update: **2023-06-22**
+Most recent update: **2023-07-02**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
-## Installation
+## Installation & update
 
 Run the following command in Stata:
 
@@ -22,6 +22,8 @@ net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/
 ```
 
 ### Regressions with `reghdfe`
+
+#### Basic usage
 
 ```stata
 . specurve using example_config_nlswork_reghdfe.yml, saving(specurve_demo)
@@ -46,6 +48,21 @@ file specurve_demo.gph saved
 
 ![example_reghdfe](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe.png)
 
+#### Display options
+
+In this example, we
+
+- turn off the benchmark line,
+- set the number of decimals to display to 4,
+- set the number of y-axis ticks/labels to 8, and
+- display the coefficients in descending order.
+
+```stata
+. specurve using example_config_nlswork_reghdfe.yml, nob yticks(8) rounding(.0001) desc
+```
+
+![example_reghdfe_with_options](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe_with_options.png)
+
 ### IV regressions with `ivreghdfe`
 
 ```stata
@@ -67,27 +84,36 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) cmd(_name_) **keepsin**gletons]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **round**ing(_real_) yticks(_int_) cmd(_name_) **keepsin**gletons]
 
 ### Options
 
-| options              | Description                                                                                              |
-| -------------------- | -------------------------------------------------------------------------------------------------------- |
-| **w**idth(_real_)    | set width of the specification curve plot.                                                               |
-| **h**eight(_real_)   | set height of the specification curve plot.                                                              |
-| relativesize(_real_) | set the size of coefficients panel relative to the entire plot. Defaults to 0.6.                         |
-| scale(_real_)        | resize text, markers, and line widths.                                                                   |
-| title(_string_)      | set graph title.                                                                                         |
-| saving(name)         | save graph as name.                                                                                      |
-| name(_string_)       | set graph title as string.                                                                               |
-| **desc**ending       | plot coefficients in descending order.                                                                   |
-| outcmd               | display the full regression command.                                                                     |
-| **out**put           | display all regression outputs.                                                                          |
-| **b**enchmark        | set the benchmark level. Defaults to 0.                                                                  |
-| cmd(_name_)          | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
-| **keepsin**gletons   | keep singleton groups. Only useful when using `reghdfe`.                                                 |
+| options               | Description                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| **w**idth(_real_)     | set width of the specification curve plot.                                                               |
+| **h**eight(_real_)    | set height of the specification curve plot.                                                              |
+| relativesize(_real_)  | set the size of coefficients panel relative to the entire plot. Defaults to 0.6.                         |
+| scale(_real_)         | resize text, markers, and line widths.                                                                   |
+| title(_string_)       | set graph title.                                                                                         |
+| saving(name)          | save graph as name.                                                                                      |
+| name(_string_)        | set graph title as string.                                                                               |
+| **desc**ending        | plot coefficients in descending order.                                                                   |
+| outcmd                | display the full regression command.                                                                     |
+| **out**put            | display all regression outputs.                                                                          |
+| **b**enchmark(_real_) | set the benchmark level. Defaults to 0.                                                                  |
+| **nob**enchmark       | turnoff the benchmark line                                                                               |
+| **round**ing(_real_)  | set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.      |
+| yticks(_int_)         | set the number of ticks/labels to display on y-axis. Defaults to 5.                                      |
+| cmd(_name_)           | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
+| **keepsin**gletons    | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
 ## Update log
+
+2023-07-02:
+
+- Added an option to turn off benchmark line.
+- Added an option to decide the number of ticks and labels on the y-axis.
+- Thanks to John Iselin from University of Maryland for suggesting the features.
 
 2023-06-22:
 

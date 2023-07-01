@@ -18,6 +18,8 @@ program specurve
     ROUNDing(real 0.001) ///
     cmd(name) ///
     KEEPSINgletons ///
+    NOBenchmark ///
+    yticks(int 5) ///
     ]
 
   capture which reghdfe
@@ -37,6 +39,7 @@ program specurve
   local nooutcmd = "`outcmd'" != "outcmd"
   local descending = "`descending'" == "descending"
   local keepsingletons = "`keepsingletons'" == "keepsingletons"
+  local nobenchmark = "`nobenchmark'" == "nobenchmark"
   local specmsize vsmall
   local specmsymbol o
   if (strlen("`cmd'")==0) local cmd "reghdfe"
@@ -99,16 +102,16 @@ program specurve
     
     // Range of coeffs and CIs	
     su lb99, meanonly
-    if (`benchmark' < `r(min)') local minlb `benchmark'
+    if (`nobenchmark'==0 & `benchmark' < `r(min)') local minlb `benchmark'
     else local minlb `r(min)'
     su ub99, meanonly
-    if (`benchmark' > `r(max)') local maxub `benchmark'
+    if (`nobenchmark'==0 & `benchmark' > `r(max)') local maxub `benchmark'
     else local maxub `r(max)'
     local range = `maxub' - `minlb'
     local rangelg = `range' / 0.95 // increase range a bit
     local ymin = round(`minlb' - (`rangelg'-`range')/2, `rounding') // no rounding?
     local ymax = round(`maxub' + (`rangelg'-`range')/2, `rounding')
-    local ystep = round((`ymax'-`ymin')/4, `rounding') 
+    local ystep = round((`ymax'-`ymin')/(`yticks'-1), `rounding') 
     // We want the upper panel coeffs to span about `relativesize' of the area
     // the lower panel specifications about (1-`relativesize') of the area
     // `nylabs' lines in the lower panel that should span 0.3*(ymax-ymin)
@@ -134,7 +137,14 @@ program specurve
     }
 
     di "[specurve] `c(current_time)' - Plotting specification curve..."
-    tw  ///
+
+    /* whether to display benchmark line */
+    if (`nobenchmark'==1) local benchmarklinestyle none
+    else local benchmarklinestyle yxline
+    if (`nobenchmark'==1) local benchmarklinelabelsize 0 
+    else local benchmarklinelabelsize small
+
+    graph tw  ///
         (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
@@ -148,11 +158,11 @@ program specurve
       , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
 	    pos(12) ring(1) rows(1) size(vsmall) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///
-      yline(`benchmark') ///
+      yline(`benchmark', lstyle(`benchmarklinestyle')) ///
       yscale() xscale() ///
       xlab(minmax, noticks labsize(small))  /// 
       ylab(`ymin'(`ystep')`ymax', angle(0) nogrid labsize(small)) ///
-      ylab(`benchmark' "`benchmark'", add custom angle(0) nogrid notick labsize(small) labcolor(cranberry)) ///
+      ylab(`benchmark' "`benchmark'", add custom angle(0) nogrid notick labsize(`benchmarklinelabelsize') labcolor(cranberry)) ///
       ylab(`speclabs1', add custom angle(0) nogrid notick labsize(tiny)) ///
       ylab(`speclabs', add custom angle(0) nogrid notick labsize(tiny)) ///
       graphregion(fcolor(white) lcolor(white)) ///
