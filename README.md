@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2023-07-02**
+Most recent update: **2023-12-26**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
