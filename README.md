@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2023-10-26**
+Most recent update: **2023-10-27**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -110,6 +110,10 @@ Use `frame change default` to switch back to the original dataset.
 | **keepsin**gletons    | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
 ## Update log
+
+2023-10-27:
+
+- Fix a bug about y-axis labels display due to early rounding.
 
 2023-10-26:
 

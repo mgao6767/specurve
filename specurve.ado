@@ -115,9 +115,10 @@ program specurve
     if (`ymax' != 0 | `ymin' != 0) local rangescale = 1
     else local rangescale = 0.95
     local rangelg = `range' / `rangescale' // increase range a bit
-    local ymin = round(`minlb' - (`rangelg'-`range')/2, `rounding') // no rounding?
-    local ymax = round(`maxub' + (`rangelg'-`range')/2, `rounding')
-    local ystep = round((`ymax'-`ymin')/(`yticks'-1), `rounding') 
+    local ymin = `minlb' - (`rangelg'-`range')/2
+    local ymax = `maxub' + (`rangelg'-`range')/2
+    local ystep = (`ymax'-`ymin')/(`yticks'-1)
+    local ndecimals = strlen(strofreal(`rounding'))-1
     // We want the upper panel coeffs to span about `relativesize' of the area
     // the lower panel specifications about (1-`relativesize') of the area
     // `nylabs' lines in the lower panel that should span 0.3*(ymax-ymin)
@@ -167,7 +168,7 @@ program specurve
       yline(`benchmark', lstyle(`benchmarklinestyle')) ///
       yscale() xscale() ///
       xlab(minmax, noticks labsize(small))  /// 
-      ylab(`ymin'(`ystep')`ymax', angle(0) nogrid labsize(small)) ///
+      ylab(`ymin'(`ystep')`ymax', angle(0) nogrid labsize(small) format(%9.`ndecimals'fc)) ///
       ylab(`benchmark' "`benchmark'", add custom angle(0) nogrid notick labsize(`benchmarklinelabelsize') labcolor(cranberry)) ///
       ylab(`speclabs1', add custom angle(0) nogrid notick labsize(tiny)) ///
       ylab(`speclabs', add custom angle(0) nogrid notick labsize(tiny)) ///
