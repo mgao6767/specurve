@@ -84,7 +84,7 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **round**ing(_real_) yticks(_int_) cmd(_name_) **keepsin**gletons]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons]
 
 ### Options
 
@@ -104,10 +104,17 @@ Use `frame change default` to switch back to the original dataset.
 | **nob**enchmark       | turnoff the benchmark line                                                                               |
 | **round**ing(_real_)  | set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.      |
 | yticks(_int_)         | set the number of ticks/labels to display on y-axis. Defaults to 5.                                      |
+| ymin(_real_)          | set the min tick of y-axis. Default is automatically set.                                                |
+| ymax(_real_)          | set the max tick of y-axis. Default is automatically set.                                                |
 | cmd(_name_)           | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
 | **keepsin**gletons    | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
 ## Update log
+
+2023-10-26:
+
+- Added options `ymin` and `ymax` to manually specify the range of y-axix.
+- Thanks to Jonas Happel from Frankfurt School of Finance & Management for suggesting the feature.
 
 2023-07-02:
 

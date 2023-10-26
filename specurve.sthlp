@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 16.0 02jul2023}{...}
+{* *! version 16.0 26oct2023}{...}
 {title:specurve - Specification Curve Analysis}{smcl}
 
 {cmd:specurve} performs {browse "https://mingze-gao.com/posts/specification-curve-analysis/":specification curve analysis} as specified by the YAML-formatted {it:filename} and plot the specification curve.
@@ -16,7 +16,7 @@
 
 {cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt realativesize(real)} {opt scale(real)}
     {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} 
-    {opt b:enchmark(real)} {opt nob:enchmark} {opt round:ing(real)} {opt yticks(int)} {opt cmd(name)} {opt keepsin:gletons}]
+    {opt b:enchmark(real)} {opt nob:enchmark} {opt round:ing(real)} {opt yticks(int)} {opt ymin(real)} {opt ymax(real)} {opt cmd(name)} {opt keepsin:gletons}]
 
 {marker Options}{...}
 
@@ -39,6 +39,8 @@
 {synopt:{opt nob:enchmark}} turnoff the benchmark line.{p_end}
 {synopt:{opt round:ing(real)}} set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.{p_end}
 {synopt:{opt yticks(int)}} set the number of ticks/labels to display on y-axis. Defaults to 5.{p_end}
+{synopt:{opt ymin(real)}} set the min tick of y-axis. Default is automatically set.{p_end}
+{synopt:{opt ymax(real)}} set the max tick of y-axis. Default is automatically set.{p_end}
 {synopt:{opt cmd(name)}} set the command used to estimate models. Defaults to {cmd:reghdfe}. Can be one of {cmd:reghdfe} and {cmd:ivreghdfe}.{p_end}
 {synopt:{opt keepsin:gletons}} keep singleton groups. Only useful when using {cmd:reghdfe}.{p_end}
 {synoptline}

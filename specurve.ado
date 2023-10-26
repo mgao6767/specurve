@@ -20,6 +20,8 @@ program specurve
     KEEPSINgletons ///
     NOBenchmark ///
     yticks(int 5) ///
+    ymin(real 0) ///
+    ymax(real 0) ///
     ]
 
   capture which reghdfe
@@ -107,8 +109,12 @@ program specurve
     su ub99, meanonly
     if (`nobenchmark'==0 & `benchmark' > `r(max)') local maxub `benchmark'
     else local maxub `r(max)'
+    if (`ymax' != 0) local maxub = `ymax'
+    if (`ymin' != 0) local minlb = `ymin'
     local range = `maxub' - `minlb'
-    local rangelg = `range' / 0.95 // increase range a bit
+    if (`ymax' != 0 | `ymin' != 0) local rangescale = 1
+    else local rangescale = 0.95
+    local rangelg = `range' / `rangescale' // increase range a bit
     local ymin = round(`minlb' - (`rangelg'-`range')/2, `rounding') // no rounding?
     local ymax = round(`maxub' + (`rangelg'-`range')/2, `rounding')
     local ystep = round((`ymax'-`ymin')/(`yticks'-1), `rounding') 
