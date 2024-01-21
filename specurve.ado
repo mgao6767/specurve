@@ -1,7 +1,7 @@
 /* specurve - Specification Curve Analysis in Stata
 
-    author: Mingze Gao (University of Sydney)
-    email: mingze.gao@sydney.edu.au
+    author: Mingze Gao (Macquarie University; University of Sydney)
+    email: mingze.gao@mq.edu.au
  */
 set matastrict on
 

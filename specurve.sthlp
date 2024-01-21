@@ -145,7 +145,7 @@ Hans Sievertsen from University of Bristol who wrote a {browse "https://github.c
 {marker author}{...}
 {title:Author}
 
-{browse "https://mingze-gao.com":Mingze Gao} from the University of Sydney.
+{browse "https://mingze-gao.com":Mingze Gao} from the Macquarie University.
 
 {marker note}{...}
 {title:Note}

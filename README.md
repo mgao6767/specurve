@@ -174,4 +174,8 @@ The [earlier version](https://github.com/mgao6767/specurve/tree/python) depends 
 
 The current version has removed Python dependency and implements everything from parsing configuration file, composing specifications, estimating models, to plotting specification curve in Stata Mata.
 
-If there's any issue (likely), please contact me at [mingze.gao@sydney.edu.au](mailto:mingze.gao@sydney.edu.au)
+If there's any issue (likely), please contact me at [mingze.gao@mq.edu.au](mailto:mingze.gao@mq.edu.au)
+
+## Used in
+
+Rodriguez, B., Huynh, K. P., Jacho-Chávez, D. T., & Sánchez-Aragón, L. (2024). [Abstract readability: Evidence from top-5 economics journals](https://doi.org/10.1016/j.econlet.2024.111541). _Economics Letters_, 111541.
