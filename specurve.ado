@@ -19,6 +19,11 @@ program specurve
     cmd(name) ///
     KEEPSINgletons ///
     NOBenchmark ///
+	  NODependent ///
+	  NOFocal ///
+    NOFIXedeffect ///
+    NOClustering ///
+    NOCONDition ///
     yticks(int 5) ///
     ymin(real 0) ///
     ymax(real 0) ///
@@ -42,6 +47,11 @@ program specurve
   local descending = "`descending'" == "descending"
   local keepsingletons = "`keepsingletons'" == "keepsingletons"
   local nobenchmark = "`nobenchmark'" == "nobenchmark"
+  local nodependent = "`nodependent'" == "nodependent"
+  local nofocal = "`nofocal'" == "nofocal"
+  local nofixedeffect = "`nofixedeffect'" == "nofixedeffect"
+  local noclustering = "`noclustering'" == "noclustering"
+  local nocondition = "`nocondition'" == "nocondition"
   local specmsize vsmall
   local specmsymbol o
   if (strlen("`cmd'")==0) local cmd "reghdfe"
@@ -125,8 +135,18 @@ program specurve
     // 0.3*(`ymax'-`ymin')/`nylabs' is step size
     local ysteplowerpanel = (1-`relativesize')*(`ymax'-`ymin')/`nylabs' 
     
+
+    // Optionally turn off display of certain labels in the bottom panel 
+    local _varlist rhs_excl_focal
+    if (`nofocal'!=1) local _varlist focal `_varlist'
+    if (`nodependent'!=1) local _varlist lhs `_varlist'
+    if (`nofixedeffect'!=1) local _varlist `_varlist' fe
+    if (`noclustering'!=1) local _varlist `_varlist' secluster
+    if (`nocondition'!=1) local _varlist `_varlist' cond
+    /* di "`_varlist'" */
+
     local offset 2
-    foreach v in lhs focal rhs_excl_focal fe secluster cond {
+    foreach v in `_varlist' {
         su `v'_encoded, meanonly
         /* No condition specified leads to cond_encoded all missing */
         if (missing("`r(max)'")) continue
@@ -151,17 +171,24 @@ program specurve
     if (`nobenchmark'==1) local benchmarklinelabelsize 0 
     else local benchmarklinelabelsize small
 
+    if (`nobenchmark'==1) di "[specurve] `c(current_time)' - No display of benchmark line."
+    if (`nodependent'==1) di "[specurve] `c(current_time)' - No display of dependent variable."
+    if (`nofocal'==1) di "[specurve] `c(current_time)' - No display of focal variable."
+    if (`nofixedeffect'==1) di "[specurve] `c(current_time)' - No display of fixed effects."
+    if (`noclustering'==1) di "[specurve] `c(current_time)' - No display of standard error clustering."
+    if (`nocondition'==1) di "[specurve] `c(current_time)' - No display of conditions."
+
     graph tw  ///
         (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
 	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
-        (scatter lhs_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  /// 
-        (scatter focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter lhs_encoded rank if `nodependent'==0, msize(`specmsize') msymbol(`specmsymbol'))  /// 
+        (scatter focal_encoded rank if `nofocal'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
-        (scatter fe_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
-        (scatter secluster_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
-        (scatter cond_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter fe_encoded rank if `nofixedeffect'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter secluster_encoded rank if `noclustering'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
+        (scatter cond_encoded rank if `nocondition'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
       , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
 	    pos(12) ring(1) rows(1) size(vsmall) symysize(small) symxsize(small)) ///
       xtitle("") ytitle("") ///

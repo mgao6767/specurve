@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 16.0 27oct2023}{...}
+{* *! version 16.0 31jan2024}{...}
 {title:specurve - Specification Curve Analysis}{smcl}
 
 {cmd:specurve} performs {browse "https://mingze-gao.com/posts/specification-curve-analysis/":specification curve analysis} as specified by the YAML-formatted {it:filename} and plot the specification curve.
@@ -16,7 +16,8 @@
 
 {cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt realativesize(real)} {opt scale(real)}
     {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} 
-    {opt b:enchmark(real)} {opt nob:enchmark} {opt round:ing(real)} {opt yticks(int)} {opt ymin(real)} {opt ymax(real)} {opt cmd(name)} {opt keepsin:gletons}]
+    {opt b:enchmark(real)} {opt nob:enchmark} {opt nod:ependent} {opt nof:ocal} {opt nofix:edeffect} {opt noc:luster} {opt nocond:ition}
+    {opt round:ing(real)} {opt yticks(int)} {opt ymin(real)} {opt ymax(real)} {opt cmd(name)} {opt keepsin:gletons}]
 
 {marker Options}{...}
 
@@ -37,6 +38,11 @@
 {synopt:{opt out:put}} display all regression outputs.{p_end}
 {synopt:{opt b:enchmark}} set the benchmark level. Defaults to 0.{p_end}
 {synopt:{opt nob:enchmark}} turnoff the benchmark line.{p_end}
+{synopt:{opt nod:ependent}} turnoff the display of dependent variable.{p_end}
+{synopt:{opt nof:ocal}} turnoff the display of focal variable.{p_end}
+{synopt:{opt nofix:edeffect}} turnoff the display of fixed effect.{p_end}
+{synopt:{opt noc:luster}} turnoff the display of standard error clustering.{p_end}
+{synopt:{opt nocond:ition}} turnoff the display of conditions.{p_end}
 {synopt:{opt round:ing(real)}} set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.{p_end}
 {synopt:{opt yticks(int)}} set the number of ticks/labels to display on y-axis. Defaults to 5.{p_end}
 {synopt:{opt ymin(real)}} set the min tick of y-axis. Default is automatically set.{p_end}

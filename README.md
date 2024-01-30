@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2023-10-27**
+Most recent update: **2024-01-31**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -50,7 +50,7 @@ file specurve_demo.gph saved
 
 #### Display options
 
-In this example, we
+In this first example, we
 
 - turn off the benchmark line,
 - set the number of decimals to display to 4,
@@ -62,6 +62,17 @@ In this example, we
 ```
 
 ![example_reghdfe_with_options](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe_with_options.png)
+
+Given that we have only a single dependent and focal variable, it may be redundant to display dependent and focal variable in the lower panel. In this second example, we
+
+- turn off the display of dependent variable
+- turn off the display of focal variable
+
+```stata
+. specurve using example_config_nlswork_reghdfe.yml, nodependent nofocal
+```
+
+![example_reghdfe_with_options_hide_dep_focal](https://github.com/mgao6767/specurve/raw/main/images/example_reghdfe_with_options_hide_dep_focal.png)
 
 ### IV regressions with `ivreghdfe`
 
@@ -84,7 +95,7 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons]
 
 ### Options
 
@@ -102,6 +113,11 @@ Use `frame change default` to switch back to the original dataset.
 | **out**put            | display all regression outputs.                                                                          |
 | **b**enchmark(_real_) | set the benchmark level. Defaults to 0.                                                                  |
 | **nob**enchmark       | turnoff the benchmark line                                                                               |
+| **nod**ependent       | turnoff the display of dependent variable.                                                               |
+| **nof**ocal           | turnoff the display of focal variable.                                                                   |
+| **nofix**edeffect     | turnoff the display of fixed effect.                                                                     |
+| **noc**luster         | turnoff the display of standard error clustering.                                                        |
+| **nocond**ition       | turnoff the display of conditions.                                                                       |
 | **round**ing(_real_)  | set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.      |
 | yticks(_int_)         | set the number of ticks/labels to display on y-axis. Defaults to 5.                                      |
 | ymin(_real_)          | set the min tick of y-axis. Default is automatically set.                                                |
@@ -110,6 +126,11 @@ Use `frame change default` to switch back to the original dataset.
 | **keepsin**gletons    | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
 ## Update log
+
+2024-01-31:
+
+- Add options to individually control what (not) to display in the lower panel. For example, `nodependent` turns off the display of dependent variable.
+- Thanks to Victor van Pelt from WHU Otto Beisheim School of Management for suggesting the feature.
 
 2023-10-27:
 
