@@ -14,7 +14,7 @@
 
 {title:Syntax}
 
-{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt realativesize(real)} {opt scale(real)}
+{cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt relativesize(real)} {opt scale(real)}
     {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} 
     {opt b:enchmark(real)} {opt nob:enchmark} {opt nod:ependent} {opt nof:ocal} {opt nofix:edeffect} {opt noc:luster} {opt nocond:ition}
     {opt round:ing(real)} {opt yticks(int)} {opt ymin(real)} {opt ymax(real)} {opt cmd(name)} {opt keepsin:gletons}]
