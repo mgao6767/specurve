@@ -89,16 +89,22 @@ program specurve
     local z_stouffer = `r(mean)'
     drop z_stouffer // TODO: this test is not consistent with Simonsohn, Simmons, and Nelson (2020) yet
     
-    gen sig95 = (`benchmark' < lb95)  | (`benchmark' > ub95)
-    gen sig99 = (`benchmark' < lb99)  | (`benchmark' > ub99)
+    /* gen sig95 = (`benchmark' < lb95)  | (`benchmark' > ub95) */
+    /* gen sig99 = (`benchmark' < lb99)  | (`benchmark' > ub99) */
+    gen sig90 = pval <= 0.1
+    gen sig95 = pval <= 0.05
+    gen sig99 = pval <= 0.01
     qui: count
     local nspecs = r(N)
     qui: count if sig99==1
     local nsig99 = r(N)
     qui: count if sig95==1
     local nsig95 = r(N)
+    qui: count if sig90==1
+    local nsig90 = r(N)
     di "[specurve] `c(current_time)' - `nsig99' out of `c(N)' models have point estimates significant at 1% level."
     di "[specurve] `c(current_time)' - `nsig95' out of `c(N)' models have point estimates significant at 5% level."
+    di "[specurve] `c(current_time)' - `nsig90' out of `c(N)' models have point estimates significant at 10% level."
     /* di "[specurve] `c(current_time)' - Median effect estimated across all specification is `beta_median'" */
     /* di "[specurve] `c(current_time)' - Stouffer's Z is `z_stouffer'" */
     /* di "[specurve] `c(current_time)' - Results saved in frame. Use {stata frame change specurve} to check. {stata frame change default} to restore." */
@@ -181,16 +187,18 @@ program specurve
     graph tw  ///
         (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
         (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
-	    (scatter beta rank if sig99==1, mcolor(blue) msymbol(o)  msize(small)) ///  
-	    (scatter beta rank if sig99==0, mcolor(red) msymbol(oh)  msize(small)) ///  
+	    (scatter beta rank if pval<0.01, mcolor(blue) msymbol(o)  msize(small)) ///  
+	    (scatter beta rank if 0.01<=pval & pval<0.05, mcolor(blue) msymbol(oh)  msize(small)) ///  
+	    (scatter beta rank if 0.05<=pval & pval<0.1, mcolor(blue) msymbol(+)  msize(small)) ///  
+	    (scatter beta rank if pval>=0.1, mcolor(red) msymbol(o)  msize(small)) ///  
         (scatter lhs_encoded rank if `nodependent'==0, msize(`specmsize') msymbol(`specmsymbol'))  /// 
         (scatter focal_encoded rank if `nofocal'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter rhs_excl_focal_encoded rank, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter fe_encoded rank if `nofixedeffect'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter secluster_encoded rank if `noclustering'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter cond_encoded rank if `nocondition'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
-      , legend(order(3 "Point estimate (significant at 1% level)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
-	    pos(12) ring(1) rows(1) size(vsmall) symysize(small) symxsize(small)) ///
+      , legend(rows(3) rowgap(1) colfirst order(3 "Point estimate ({it:p}<0.01)" 4 "Point estimate ({it:p}<0.05)" 5 "Point estimate ({it:p}<0.1)" 6 "Point estimate ({it:p}{&ge}0.1)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
+	    pos(12) ring(1) size(vsmall) symysize(vsmall) symxsize(vsmall)) ///
       xtitle("") ytitle("") ///
       yline(`benchmark', lstyle(`benchmarklinestyle')) ///
       yscale() xscale() ///
