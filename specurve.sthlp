@@ -17,7 +17,7 @@
 {cmd:specurve} {cmd:using} {it:filename}{cmd:,} [{opt w:idth(real)} {opt h:eight(real)} {opt relativesize(real)} {opt scale(real)}
     {opt title(string)} {opt saving(name)} {opt name(string)} {opt desc:ending} {opt outcmd} {opt out:put} 
     {opt b:enchmark(real)} {opt nob:enchmark} {opt nod:ependent} {opt nof:ocal} {opt nofix:edeffect} {opt noc:luster} {opt nocond:ition}
-    {opt round:ing(real)} {opt yticks(int)} {opt ymin(real)} {opt ymax(real)} {opt cmd(name)} {opt keepsin:gletons}]
+    {opt round:ing(real)} {opt yticks(int)} {opt ymin(real)} {opt ymax(real)} {opt cmd(name)} {opt keepsin:gletons} {opt controlvariablebygroup}]
 
 {marker Options}{...}
 
@@ -49,6 +49,7 @@
 {synopt:{opt ymax(real)}} set the max tick of y-axis. Default is automatically set.{p_end}
 {synopt:{opt cmd(name)}} set the command used to estimate models. Defaults to {cmd:reghdfe}. Can be one of {cmd:reghdfe} and {cmd:ivreghdfe}.{p_end}
 {synopt:{opt keepsin:gletons}} keep singleton groups. Only useful when using {cmd:reghdfe}.{p_end}
+{synopt:{opt controlvariablebygroup}} the labels of control variables in the configuration file indicate combination of groups, instead of each indicating a distinct group. Please see the example on GitHub to better understand the difference.{p_end}
 {synoptline}
 
 {marker examples}{...}

@@ -85,6 +85,23 @@ Given that we have only a single dependent and focal variable, it may be redunda
 
 Check `help specurve` in Stata for a step-by-step guide.
 
+### Advanced usage
+
+Sometimes, we are interested in combinations of controls. We can use the `controlvariablebygroup` option to present a more concise plot. See [Issue 2](https://github.com/mgao6767/specurve/issues/2) for a related discussion.
+
+The plot below demonstrate the difference. The left one does not set `controlvariablebygroup` and the right one does. It's obvious that if we have say 2^6=64 models, the left one needs 64 lines but the right one uses only 6 lines for showing specifications.
+
+![example_controlvariablebygroup](https://github.com/mgao6767/specurve/raw/main/images/example_controlvariablebygroup.png)
+
+However, to achieve this, we **MUST** make a small change in the configuration file. We need to use **"comma-followed-by-space"** style to label each control variable choice. This allows the program to parse the _combination_ of control variables that forms the prevailing model specification. By default, the program assumes the entirety of the label uniquely identifies a specification of control variables.
+
+To produce the example, use the following code.
+
+```stata
+. copy https://mingze-gao.com/specurve/example_config_nlswork_reghdfe_2.yml ., replace
+. specurve using example_config_nlswork_reghdfe_2.yml, controlvariablebygroup
+```
+
 ### Post estimation
 
 Estimation results are saved in the [frame](https://www.stata.com/manuals/dframesintro.pdf) named "specurve".
@@ -95,43 +112,45 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) relativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) relativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons controlvariablebygroup]
 
 ### Options
 
-| options               | Description                                                                                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------- |
-| **w**idth(_real_)     | set width of the specification curve plot.                                                               |
-| **h**eight(_real_)    | set height of the specification curve plot.                                                              |
-| relativesize(_real_)  | set the size of coefficients panel relative to the entire plot. Defaults to 0.6.                         |
-| scale(_real_)         | resize text, markers, and line widths.                                                                   |
-| title(_string_)       | set graph title.                                                                                         |
-| saving(name)          | save graph as name.                                                                                      |
-| name(_string_)        | set graph title as string.                                                                               |
-| **desc**ending        | plot coefficients in descending order.                                                                   |
-| outcmd                | display the full regression command.                                                                     |
-| **out**put            | display all regression outputs.                                                                          |
-| **b**enchmark(_real_) | set the benchmark level. Defaults to 0.                                                                  |
-| **nob**enchmark       | turnoff the benchmark line                                                                               |
-| **nod**ependent       | turnoff the display of dependent variable.                                                               |
-| **nof**ocal           | turnoff the display of focal variable.                                                                   |
-| **nofix**edeffect     | turnoff the display of fixed effect.                                                                     |
-| **noc**luster         | turnoff the display of standard error clustering.                                                        |
-| **nocond**ition       | turnoff the display of conditions.                                                                       |
-| **round**ing(_real_)  | set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.      |
-| yticks(_int_)         | set the number of ticks/labels to display on y-axis. Defaults to 5.                                      |
-| ymin(_real_)          | set the min tick of y-axis. Default is automatically set.                                                |
-| ymax(_real_)          | set the max tick of y-axis. Default is automatically set.                                                |
-| cmd(_name_)           | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`. |
-| **keepsin**gletons    | keep singleton groups. Only useful when using `reghdfe`.                                                 |
+| options                | Description                                                                                                                                                                                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **w**idth(_real_)      | set width of the specification curve plot.                                                                                                                                                               |
+| **h**eight(_real_)     | set height of the specification curve plot.                                                                                                                                                              |
+| relativesize(_real_)   | set the size of coefficients panel relative to the entire plot. Defaults to 0.6.                                                                                                                         |
+| scale(_real_)          | resize text, markers, and line widths.                                                                                                                                                                   |
+| title(_string_)        | set graph title.                                                                                                                                                                                         |
+| saving(name)           | save graph as name.                                                                                                                                                                                      |
+| name(_string_)         | set graph title as string.                                                                                                                                                                               |
+| **desc**ending         | plot coefficients in descending order.                                                                                                                                                                   |
+| outcmd                 | display the full regression command.                                                                                                                                                                     |
+| **out**put             | display all regression outputs.                                                                                                                                                                          |
+| **b**enchmark(_real_)  | set the benchmark level. Defaults to 0.                                                                                                                                                                  |
+| **nob**enchmark        | turnoff the benchmark line                                                                                                                                                                               |
+| **nod**ependent        | turnoff the display of dependent variable.                                                                                                                                                               |
+| **nof**ocal            | turnoff the display of focal variable.                                                                                                                                                                   |
+| **nofix**edeffect      | turnoff the display of fixed effect.                                                                                                                                                                     |
+| **noc**luster          | turnoff the display of standard error clustering.                                                                                                                                                        |
+| **nocond**ition        | turnoff the display of conditions.                                                                                                                                                                       |
+| **round**ing(_real_)   | set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.                                                                                                      |
+| yticks(_int_)          | set the number of ticks/labels to display on y-axis. Defaults to 5.                                                                                                                                      |
+| ymin(_real_)           | set the min tick of y-axis. Default is automatically set.                                                                                                                                                |
+| ymax(_real_)           | set the max tick of y-axis. Default is automatically set.                                                                                                                                                |
+| cmd(_name_)            | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`.                                                                                                 |
+| **keepsin**gletons     | keep singleton groups. Only useful when using `reghdfe`.                                                                                                                                                 |
+| controlvariablebygroup | the labels of control variables in the configuration file indicate combination of groups, instead of each indicating a distinct group. Please see the example above to better understand the difference. |
 
 ## Update log
 
 2024-02-18:
 
+- Allow for labels in "control variables" to indicate combination of variables, instead of each label indicating a unique specification of control variables. Fix [https://github.com/mgao6767/specurve/issues/2](https://github.com/mgao6767/specurve/issues/2).
 - Improve the legend. Now it shows point estimates of different significance levels.
 - Fix a typo in the help file.
-- Thanks to Leonhard Friedel from WHU Otto Beisheim School of Management for suggesting the feature.
+- Thanks to Leonhard Friedel from WHU Otto Beisheim School of Management for suggesting the features.
 
 2024-01-31:
 

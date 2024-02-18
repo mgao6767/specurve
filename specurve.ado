@@ -27,6 +27,7 @@ program specurve
     yticks(int 5) ///
     ymin(real 0) ///
     ymax(real 0) ///
+    controlvariablebygroup ///
     ]
 
   capture which reghdfe
@@ -46,6 +47,7 @@ program specurve
   local nooutcmd = "`outcmd'" != "outcmd"
   local descending = "`descending'" == "descending"
   local keepsingletons = "`keepsingletons'" == "keepsingletons"
+  local controlvariablebygroup = "`controlvariablebygroup'" == "controlvariablebygroup"
   local nobenchmark = "`nobenchmark'" == "nobenchmark"
   local nodependent = "`nodependent'" == "nodependent"
   local nofocal = "`nofocal'" == "nofocal"
@@ -59,18 +61,7 @@ program specurve
   mata: main("`using'", `nooutput', `keepsingletons')
 
   frame specurve {
-    /* Number of lines in the lower panel (specificaitons) */
-    local nylabs -1
-    foreach v in lhs focal rhs_excl_focal fe secluster cond {
-        /* encode `v', gen(`v'_encoded) label(`v'_label) */
-        gen `v'_encoded = real(id`v')
-        label values `v'_encode labchoices
-        su `v'_encoded, meanonly
-        /* conditions may be missing so that r(max) is undefined */
-        if (!missing("`r(max)'")) {
-          local nylabs = `nylabs' + `r(max)' - `r(min)' + 2
-        }
-    }
+
 
     if (`descending') gsort -beta
     else gsort beta
@@ -109,6 +100,47 @@ program specurve
     /* di "[specurve] `c(current_time)' - Stouffer's Z is `z_stouffer'" */
     /* di "[specurve] `c(current_time)' - Results saved in frame. Use {stata frame change specurve} to check. {stata frame change default} to restore." */
 
+    /* Maybe, here, we process rhs_excl_focal. 
+       Each value of rhs_excl_focal is currently viewed as a distinct spec.
+       We may instead view it as concatenation of specs. 
+     */
+    if `controlvariablebygroup'==1 {
+      quietly {
+        split rhs_excl_focal, parse(", ") gen(rhs)
+        reshape long rhs, i(model) j(rhs_g)
+        drop if rhs==""
+        bys rhs: egen idrhs = min(real(idrhs_excl_focal))
+        /* Then, need to fix the value labels. */
+        /* Interestingly and to our benefit, we only need to fix the labchoices
+          for the control variables group. */
+        su idrhs, meanonly
+        forvalues v = `r(min)'/`r(max)' {
+          preserve
+          keep if idrhs == `v'
+          local lab = rhs[1]
+          restore
+          label define labchoices `v' "`lab'", modify
+        }
+        tostring idrhs, replace
+      }
+      label var rhs "Control variables"
+    }
+
+    /* Number of lines in the lower panel (specificaitons) */
+    local nylabs -1
+    if `controlvariablebygroup'==1 local _varlist lhs focal rhs fe secluster cond
+    else local _varlist lhs focal rhs_excl_focal fe secluster cond
+    foreach v in `_varlist' {
+        /* encode `v', gen(`v'_encoded) label(`v'_label) */
+        cap gen `v'_encoded = real(id`v')
+        label values `v'_encoded labchoices
+        su `v'_encoded, meanonly
+        /* conditions may be missing so that r(max) is undefined */
+        if (!missing("`r(max)'")) {
+          local nylabs = `nylabs' + `r(max)' - `r(min)' + 2
+        }
+    }
+    
     /* Plotting */
     label var lhs "Dependent variable"
     label var focal "Focal variable"
@@ -143,7 +175,8 @@ program specurve
     
 
     // Optionally turn off display of certain labels in the bottom panel 
-    local _varlist rhs_excl_focal
+    if `controlvariablebygroup'==1 local _varlist rhs
+    else local _varlist rhs_excl_focal
     if (`nofocal'!=1) local _varlist focal `_varlist'
     if (`nodependent'!=1) local _varlist lhs `_varlist'
     if (`nofixedeffect'!=1) local _varlist `_varlist' fe
@@ -168,7 +201,9 @@ program specurve
         qui: replace `v'_encoded = `ymin' - (`offset'+`v'_encoded-`r(min)'+1) * `ysteplowerpanel'
         local offset = `offset' + `r(max)'-`r(min)' + 2
     }
-
+    if `controlvariablebygroup'==1 {
+      gen rhs_excl_focal_encoded = rhs_encoded
+    }
     di "[specurve] `c(current_time)' - Plotting specification curve..."
 
     /* whether to display benchmark line */
@@ -214,7 +249,11 @@ program specurve
       `saving' `title' `name'
 
     /* clean up */
-    drop *_encoded id*
+    drop *_encoded id* 
+    if `controlvariablebygroup' {
+      drop rhs_g rhs
+      qui duplicates drop
+    }
   }
 
   di "[specurve] `c(current_time)' - Completed."
@@ -276,7 +315,7 @@ void main(string scalar filename, real scalar nooutput, real scalar keepsingleto
   conditions = J(200, 1, config)
   /* Stata frame to store results */
   stata("cap frame drop specurve")
-  stata("mkf specurve double(beta lb95 ub95 lb99 ub99 pval) int(obs) str32(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd) str8(idlhs idfocal idrhs_excl_focal idfe idsecluster idcond)")
+  stata("mkf specurve double(beta lb95 ub95 lb99 ub99 pval) int(obs) strL(model lhs focal rhs_excl_focal fe secluster cond) str1024(cmd) str8(idlhs idfocal idrhs_excl_focal idfe idsecluster idcond)")
   st_framecurrent("specurve")
   stata(sprintf("label define labchoices 0 %s%s, replace", char(34), char(34)))
   /* procedures */
