@@ -95,7 +95,7 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) realativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) relativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons]
 
 ### Options
 
