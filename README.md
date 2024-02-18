@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2024-01-31**
+Most recent update: **2024-02-18**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -126,6 +126,12 @@ Use `frame change default` to switch back to the original dataset.
 | **keepsin**gletons    | keep singleton groups. Only useful when using `reghdfe`.                                                 |
 
 ## Update log
+
+2024-02-18:
+
+- Improve the legend. Now it shows point estimates of different significance levels.
+- Fix a typo in the help file.
+- Thanks to Leonhard Friedel from WHU Otto Beisheim School of Management for suggesting the feature.
 
 2024-01-31:
 
