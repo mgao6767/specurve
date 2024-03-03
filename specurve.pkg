@@ -4,6 +4,6 @@ d
 d {bf:Mingze Gao, Department of Applied Finance, Macquarie University}
 d Stata package to plot specification curves.
 d
-d Distribution-Date: 20240218
+d Distribution-Date: 20240303
 f specurve.ado
 f specurve.sthlp

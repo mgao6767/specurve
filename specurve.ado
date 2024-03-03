@@ -24,6 +24,8 @@ program specurve
     NOFIXedeffect ///
     NOClustering ///
     NOCONDition ///
+    noci99 ///
+    noci95 ///
     yticks(int 5) ///
     ymin(real 0) ///
     ymax(real 0) ///
@@ -54,6 +56,8 @@ program specurve
   local nofixedeffect = "`nofixedeffect'" == "nofixedeffect"
   local noclustering = "`noclustering'" == "noclustering"
   local nocondition = "`nocondition'" == "nocondition"
+  local noci99 = "`noci99'" == "noci99"
+  local noci95 = "`noci95'" == "noci95"
   local specmsize vsmall
   local specmsymbol o
   if (strlen("`cmd'")==0) local cmd "reghdfe"
@@ -218,10 +222,17 @@ program specurve
     if (`nofixedeffect'==1) di "[specurve] `c(current_time)' - No display of fixed effects."
     if (`noclustering'==1) di "[specurve] `c(current_time)' - No display of standard error clustering."
     if (`nocondition'==1) di "[specurve] `c(current_time)' - No display of conditions."
+    if (`noci99'==1) di "[specurve] `c(current_time)' - No display of 99% confidence intervals."
+    if (`noci95'==1) di "[specurve] `c(current_time)' - No display of 95% confidence intervals."
+
+    if (`noci99'==1) local _legendci99 " (hidden)"
+    else local _legendci99 ""
+    if (`noci95'==1) local _legendci95 " (hidden)"
+    else local _legendci95 ""
 
     graph tw  ///
-        (rbar ub99 lb99 rank, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
-        (rbar ub95 lb95 rank, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
+        (rbar ub99 lb99 rank if `noci99'==0, fcolor(gs12) fintensity(inten50) lcolor(gs12) lwidth(none)) /// 99% CI
+        (rbar ub95 lb95 rank if `noci95'==0, fcolor(gs6) fintensity(inten40) lcolor(gs6) lwidth(none)) /// 95% CI
 	    (scatter beta rank if pval<0.01, mcolor(blue) msymbol(o)  msize(small)) ///  
 	    (scatter beta rank if 0.01<=pval & pval<0.05, mcolor(blue) msymbol(oh)  msize(small)) ///  
 	    (scatter beta rank if 0.05<=pval & pval<0.1, mcolor(blue) msymbol(+)  msize(small)) ///  
@@ -232,7 +243,7 @@ program specurve
         (scatter fe_encoded rank if `nofixedeffect'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter secluster_encoded rank if `noclustering'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
         (scatter cond_encoded rank if `nocondition'==0, msize(`specmsize') msymbol(`specmsymbol'))  ///
-      , legend(rows(3) rowgap(1) colfirst order(3 "Point estimate ({it:p}<0.01)" 4 "Point estimate ({it:p}<0.05)" 5 "Point estimate ({it:p}<0.1)" 6 "Point estimate ({it:p}{&ge}0.1)" 1 "99% CI" 2 "95% CI") region(lcolor(white)) ///
+      , legend(rows(3) rowgap(1) colfirst order(3 "Point estimate ({it:p}<0.01)" 4 "Point estimate ({it:p}<0.05)" 5 "Point estimate ({it:p}<0.1)" 6 "Point estimate ({it:p}{&ge}0.1)" 1 "99% CI`_legendci99'" 2 "95% CI`_legendci95'") region(lcolor(white)) ///
 	    pos(12) ring(1) size(vsmall) symysize(vsmall) symxsize(vsmall)) ///
       xtitle("") ytitle("") ///
       yline(`benchmark', lstyle(`benchmarklinestyle')) ///

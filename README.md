@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2024-02-18**
+Most recent update: **2024-03-03**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -112,7 +112,7 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Syntax
 
-**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) relativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons controlvariablebygroup]
+**specurve** using _filename_, [**w**idth(_real_) **h**eight(_real_) relativesize(_real_) scale(_real_) title(_string_) saving(_name_) name(_string_) **desc**ending outcmd **out**put **b**enchmark(_real_) **nob**enchmark **nod**ependent **nof**ocal **nofix**edeffect **noc**luster **nocond**ition noci99 noci95 **round**ing(_real_) yticks(_int_) ymin(_real_) ymax(_real_) cmd(_name_) **keepsin**gletons controlvariablebygroup]
 
 ### Options
 
@@ -135,6 +135,8 @@ Use `frame change default` to switch back to the original dataset.
 | **nofix**edeffect      | turnoff the display of fixed effect.                                                                                                                                                                     |
 | **noc**luster          | turnoff the display of standard error clustering.                                                                                                                                                        |
 | **nocond**ition        | turnoff the display of conditions.                                                                                                                                                                       |
+| noci99                 | turnoff the display of 99% confidence intervals.                                                                                                                                                         |
+| noci95                 | turnoff the display of 95% confidence intervals.                                                                                                                                                         |
 | **round**ing(_real_)   | set the rounding of y-axis labels and hence number of decimal places to display. Defaults to 0.001.                                                                                                      |
 | yticks(_int_)          | set the number of ticks/labels to display on y-axis. Defaults to 5.                                                                                                                                      |
 | ymin(_real_)           | set the min tick of y-axis. Default is automatically set.                                                                                                                                                |
@@ -144,6 +146,11 @@ Use `frame change default` to switch back to the original dataset.
 | controlvariablebygroup | the labels of control variables in the configuration file indicate combination of groups, instead of each indicating a distinct group. Please see the example above to better understand the difference. |
 
 ## Update log
+
+2024-03-03:
+
+- Add options `noci99` and `noci95` to hide the 99% and 95% confidence intervals, respectively.
+- Thanks to Kausik Chaudhuri from University of Leeds for suggesting the feature.
 
 2024-02-18:
 
@@ -226,8 +233,6 @@ If there's any issue (likely), please contact me at [mingze.gao@mq.edu.au](mailt
 
 As far as I know, `specurve` is used in
 
-Zhang, L., & Wu, K. (2024). [Banking Liberalization and Analyst Forecast Accuracy](https://ssrn.com/abstract=4691259). _SSRN Working Paper_.
-
-Rodriguez, B., Huynh, K. P., Jacho-Chávez, D. T., & Sánchez-Aragón, L. (2024). [Abstract readability: Evidence from top-5 economics journals](https://doi.org/10.1016/j.econlet.2024.111541). _Economics Letters_, 111541.
-
-Gao, M., Leung, H., & Qiu, B. (2021). [Organization capital and executive performance incentives](https://doi.org/10.1016/j.jbankfin.2020.106017). _Journal of Banking & Finance_, 106017.
+- Zhang, L., & Wu, K. (2024). [Banking Liberalization and Analyst Forecast Accuracy](https://ssrn.com/abstract=4691259). _SSRN Working Paper_.
+- Rodriguez, B., Huynh, K. P., Jacho-Chávez, D. T., & Sánchez-Aragón, L. (2024). [Abstract readability: Evidence from top-5 economics journals](https://doi.org/10.1016/j.econlet.2024.111541). _Economics Letters_, 111541.
+- Gao, M., Leung, H., & Qiu, B. (2021). [Organization capital and executive performance incentives](https://doi.org/10.1016/j.jbankfin.2020.106017). _Journal of Banking & Finance_, 106017.
