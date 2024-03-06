@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2024-03-03**
+Most recent update: **2024-03-07**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -146,6 +146,10 @@ Use `frame change default` to switch back to the original dataset.
 | controlvariablebygroup | the labels of control variables in the configuration file indicate combination of groups, instead of each indicating a distinct group. Please see the example above to better understand the difference. |
 
 ## Update log
+
+2024-03-07:
+
+- Fix a bug of options `noci99` and `noci95` not effective.
 
 2024-03-03:
 

@@ -24,8 +24,8 @@ program specurve
     NOFIXedeffect ///
     NOClustering ///
     NOCONDition ///
-    noci99 ///
-    noci95 ///
+    NOCI99 ///
+    NOCI95 ///
     yticks(int 5) ///
     ymin(real 0) ///
     ymax(real 0) ///
