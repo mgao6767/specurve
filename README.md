@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2024-03-07**
+Most recent update: **2024-03-31**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -85,6 +85,10 @@ Given that we have only a single dependent and focal variable, it may be redunda
 
 Check `help specurve` in Stata for a step-by-step guide.
 
+### Poisson pseudo-likelihood regression with `ppmlhdfe`
+
+`ppmlhdfe` is supported. Examples to be added.
+
 ### Advanced usage
 
 Sometimes, we are interested in combinations of controls. We can use the `controlvariablebygroup` option to present a more concise plot. See [Issue 2](https://github.com/mgao6767/specurve/issues/2) for a related discussion.
@@ -141,11 +145,16 @@ Use `frame change default` to switch back to the original dataset.
 | yticks(_int_)          | set the number of ticks/labels to display on y-axis. Defaults to 5.                                                                                                                                      |
 | ymin(_real_)           | set the min tick of y-axis. Default is automatically set.                                                                                                                                                |
 | ymax(_real_)           | set the max tick of y-axis. Default is automatically set.                                                                                                                                                |
-| cmd(_name_)            | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe` and `ivreghdfe`.                                                                                                 |
+| cmd(_name_)            | set the command used to estimate models. Defaults to `reghdfe`. Can be one of `reghdfe`, `ivreghdfe` or `ppmlhdfe`.                                                                                      |
 | **keepsin**gletons     | keep singleton groups. Only useful when using `reghdfe`.                                                                                                                                                 |
 | controlvariablebygroup | the labels of control variables in the configuration file indicate combination of groups, instead of each indicating a distinct group. Please see the example above to better understand the difference. |
 
 ## Update log
+
+2024-03-31:
+
+- Add support for `ppmlhdfe`. Simply use `specurve ...., cmd(ppmlhdfe)`. No additional changes needed. However, note that this version does not support the `expsure` and `offset` options in `ppmlhdfe`.
+- Thanks to Leonhard Friedel from WHU Otto Beisheim School of Management for suggesting the features.
 
 2024-03-07:
 

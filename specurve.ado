@@ -61,6 +61,14 @@ program specurve
   local specmsize vsmall
   local specmsymbol o
   if (strlen("`cmd'")==0) local cmd "reghdfe"
+  if "`cmd'" == "ppmlhdfe" {
+    capture which ppmlhdfe 
+    if _rc {
+      display as result in smcl `"Please install package {it:ppmlhdfe} from SSC in order to run this do-file;"' _newline ///
+          `"you can do so by clicking this link: {stata "ssc install ppmlhdfe":auto-install ppmlhdfe}"'
+      exit 199
+  }
+  }
 
   mata: main("`using'", `nooutput', `keepsingletons')
 
@@ -367,6 +375,8 @@ void estimate(pointer(struct specification vector) scalar specs,
         cmd = sprintf("%s noa", cmd)
       } else if (spec.stata_cmd == "ivreghdfe") {
         cmd = sprintf("%s ", cmd)
+      } else if (spec.stata_cmd == "ppmlhdfe") {
+        cmd = sprintf("%s ", cmd)
       }
     }
     /* standard error clustering */
@@ -375,10 +385,12 @@ void estimate(pointer(struct specification vector) scalar specs,
         cmd = sprintf("%s vce(cluster %s)", cmd, spec.standard_error_clustering)
       } else if (spec.stata_cmd == "ivreghdfe") {
         cmd = sprintf("%s cluster(%s)", cmd, spec.standard_error_clustering)
+      } else if (spec.stata_cmd == "ppmlhdfe") {
+        cmd = sprintf("%s vce(cluster %s)", cmd, spec.standard_error_clustering)
       }
     }
     /* reghdfe options */
-    if (spec.stata_cmd == "reghdfe") {
+    if (spec.stata_cmd == "reghdfe" | spec.stata_cmd == "ppmlhdfe") {
       if (keepsingletons) {
         cmd = sprintf("%s keepsingletons", cmd)
       }
@@ -394,19 +406,34 @@ void estimate(pointer(struct specification vector) scalar specs,
         /* spec.focal_var is like "(fvar=iv)" */
         fvar = substr(spec.focal_var, 2, strpos(spec.focal_var, "=")-2)
         stata(sprintf("local est = _b[%s]", fvar))
+    } else if (spec.stata_cmd == "ppmlhdfe") {
+        fvar = spec.focal_var
     }
     spec.focal_var = fvar /* Maybe not to overwrite? */
     stata(sprintf("local est = _b[%s]", spec.focal_var))
-    stata(sprintf("local lb95 = _b[%s] - invttail(e(df_r),0.025)*_se[%s]", 
-                  spec.focal_var, spec.focal_var))
-    stata(sprintf("local ub95 = _b[%s] + invttail(e(df_r),0.025)*_se[%s]", 
-                  spec.focal_var, spec.focal_var))
-    stata(sprintf("local lb99 = _b[%s] - invttail(e(df_r),0.005)*_se[%s]", 
-                  spec.focal_var, spec.focal_var))
-    stata(sprintf("local ub99 = _b[%s] + invttail(e(df_r),0.005)*_se[%s]", 
-                  spec.focal_var, spec.focal_var))
-    stata(sprintf("local pval = 2*ttail(e(df_r), abs(_b[%s]/_se[%s]))",
-                  spec.focal_var, spec.focal_var))
+    if (spec.stata_cmd == "reghdfe" | spec.stata_cmd == "ivreghdfe") {
+      stata(sprintf("local lb95 = _b[%s] - invttail(e(df_r),0.025)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local ub95 = _b[%s] + invttail(e(df_r),0.025)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local lb99 = _b[%s] - invttail(e(df_r),0.005)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local ub99 = _b[%s] + invttail(e(df_r),0.005)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local pval = 2*ttail(e(df_r), abs(_b[%s]/_se[%s]))",
+                    spec.focal_var, spec.focal_var))
+    } else if (spec.stata_cmd == "ppmlhdfe") {
+      stata(sprintf("local lb95 = _b[%s] + invnormal(0.025)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local ub95 = _b[%s] - invnormal(0.025)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local lb99 = _b[%s] + invnormal(0.005)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local ub99 = _b[%s] - invnormal(0.005)*_se[%s]", 
+                    spec.focal_var, spec.focal_var))
+      stata(sprintf("local pval = 2*normal(-abs(_b[%s]/_se[%s]))",
+                    spec.focal_var, spec.focal_var))
+    }
     string scalar framepost, model_id
     model_id = sprintf("model %g", i)
     framepost = "frame post specurve "
