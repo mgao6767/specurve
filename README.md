@@ -246,6 +246,7 @@ If there's any issue (likely), please contact me at [mingze.gao@mq.edu.au](mailt
 
 As far as I know, `specurve` is used in
 
+- Iselin, J. (2024). [The Labor Supply Effects of the California Earned Income Tax Credit](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5004846). _SSRN Working Paper_.
 - Zhang, L., & Wu, K. (2024). [Banking Liberalization and Analyst Forecast Accuracy](https://ssrn.com/abstract=4691259). _SSRN Working Paper_.
 - Rodriguez, B., Huynh, K. P., Jacho-Chávez, D. T., & Sánchez-Aragón, L. (2024). [Abstract readability: Evidence from top-5 economics journals](https://doi.org/10.1016/j.econlet.2024.111541). _Economics Letters_, 111541.
 - Gao, M., Leung, H., & Qiu, B. (2021). [Organization capital and executive performance incentives](https://doi.org/10.1016/j.jbankfin.2020.106017). _Journal of Banking & Finance_, 106017.
