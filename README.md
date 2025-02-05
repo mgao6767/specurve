@@ -1,6 +1,6 @@
 # specurve
 
-Most recent update: **2024-03-31**
+Most recent update: **2025-02-06**
 
 `specurve` is a Stata command for [Specification Curve Analysis](https://mingze-gao.com/posts/specification-curve-analysis/).
 
@@ -11,6 +11,10 @@ Run the following command in Stata:
 ```stata
 net install specurve, from("https://raw.githubusercontent.com/mgao6767/specurve/master") replace
 ```
+
+> [!NOTE]
+> Ensure that you've correctly installed [`reghdfe`](https://github.com/sergiocorreia/reghdfe/) and [`ivreghdfe`](https://github.com/sergiocorreia/ivreghdfe).
+> Known issue is that `ivreghdfe` from `ssc` may not work.
 
 ## Example usage & output
 
@@ -151,6 +155,11 @@ Use `frame change default` to switch back to the original dataset.
 
 ## Update log
 
+2025-02-06:
+
+- Remove link to auto-install missing packages (`reghdfe`, `ivreghdfe` and `ppmlhdfe`) via `ssc install`. It is recommended to follow the most updated installation guide of respective packages.
+- Thanks to Leonardo Sánchez-Aragón from ESPOL for identifying the bug.
+
 2024-03-31:
 
 - Add support for `ppmlhdfe`. Simply use `specurve ...., cmd(ppmlhdfe)`. No additional changes needed. However, note that this version does not support the `expsure` and `offset` options in `ppmlhdfe`.
@@ -223,6 +232,22 @@ Use `frame change default` to switch back to the original dataset.
 * **When following the help file, Stata reports error "file example_config_nlswork_1.yml could not be opened".**
 
 This is mostly due to permission error. Stata does not have write permission to the current working directory so it cannot download the example configuration file. You can solve it by changing the working directory to somewhere else.
+
+* **When following the guide, Stata reports the following error.**
+
+```
+. specurve using example_config_nlswork_ivreghdfe.yml, cmd(ivreghdfe) rounding(0.01) title("IV regression with ivreghdfe")
+[specurve] 07:11:18 - 60 total specifications to estimate.
+[specurve] 07:11:18 - Estimating model 1 of 60
+                 stata():  3598  Stata returned error
+              estimate():     -  function returned error
+                  main():     -  function returned error
+                 <istmt>:     -  function returned error
+r(3598);
+```
+
+This is most likely due to errors related to the underlying packages used. Please uninstall `ivreghdfe` and follow its [latest installation guide](https://github.com/sergiocorreia/ivreghdfe). Chances are that you'll need to do `net install` rather than `ssc install`.
+
 
 ## Thanks to
 

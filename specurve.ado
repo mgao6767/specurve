@@ -34,14 +34,12 @@ program specurve
 
   capture which reghdfe
   if _rc {
-    display as result in smcl `"Please install package {it:reghdfe} from SSC in order to run this do-file;"' _newline ///
-        `"you can do so by clicking this link: {stata "ssc install reghdfe":auto-install reghdfe}"'
+    display as result in smcl `"Please install package {it:reghdfe} to run this do-file;"'
     exit 199
   }
   capture which ivreghdfe 
   if _rc {
-    display as result in smcl `"Please install package {it:ivreghdfe} from SSC in order to run this do-file;"' _newline ///
-        `"you can do so by clicking this link: {stata "ssc install ivreghdfe":auto-install ivreghdfe}"'
+    display as result in smcl `"Please install package {it:ivreghdfe} in order to run this do-file;"' 
     exit 199
   }
 
@@ -64,8 +62,7 @@ program specurve
   if "`cmd'" == "ppmlhdfe" {
     capture which ppmlhdfe 
     if _rc {
-      display as result in smcl `"Please install package {it:ppmlhdfe} from SSC in order to run this do-file;"' _newline ///
-          `"you can do so by clicking this link: {stata "ssc install ppmlhdfe":auto-install ppmlhdfe}"'
+      display as result in smcl `"Please install package {it:ppmlhdfe} from SSC in order to run this do-file;"'
       exit 199
   }
   }
